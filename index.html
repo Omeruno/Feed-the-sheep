@@ -12,16 +12,34 @@
         <div id="game-world">
             <div id="bg-1" class="background-layer"></div>
             <div id="bg-2" class="background-layer"></div>
+            <div id="cloud-layer"></div>
             <div id="grass-layer"></div>
-            <!-- Овцы будут добавляться сюда -->
+            <!-- Овцы, волки и прочее будут добавляться сюда -->
+        </div>
+        
+        <div id="ui-layer">
+            <div id="resources-container">
+                <div id="wool-counter" class="ui-element resource-counter">
+                    <img src="images/wool/wool.png" alt="Шерсть">
+                    <span id="wool-amount">0</span>
+                </div>
+                <div id="skin-counter" class="ui-element resource-counter">
+                    <img src="images/skin/skin.png" alt="Шкура">
+                    <span id="skin-amount">0</span>
+                </div>
+            </div>
+            <button id="scissors-button" class="ui-element"></button>
         </div>
     </div>
 
-    <!-- Аудиофайлы с правильным путем к папке "sound" -->
-    <audio id="bg-music" src="sound/lofi_music.mp3" loop></audio>
+    <!-- Аудиофайлы -->
+    <audio id="day-sound" src="sound/day_sound.mp3" loop></audio>
+    <audio id="night-song" src="sound/night_song.mp3" loop></audio>
     <audio id="sheep-sound" src="sound/sheep_sound.mp3"></audio>
     <audio id="plant-sound" src="sound/plant_sound.mp3"></audio>
     <audio id="eat-sound" src="sound/eat_sound.mp3"></audio>
+    <audio id="wolf-attack-sound" src="sound/wolf_attak.mp3"></audio>
+    <audio id="wolf-dead-sound" src="sound/wolf_dead.mp3"></audio>
 
     <script src="js/script.js"></script>
 </body>
