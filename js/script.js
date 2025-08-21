@@ -1,7 +1,7 @@
 // --- НАСТРОЙКИ ИГРЫ ---
-const NUM_SHEEP = 5;
+const STARTING_SHEEP = 1;
 const NUM_CLOUDS = 4;
-const SHEEP_SPEED = 50;
+const SHEEP_SPEED = 40;
 const MIN_WAIT_TIME = 2000;
 const MAX_WAIT_TIME = 5000;
 const GRASS_DISAPPEAR_TIME = 10000;
@@ -10,8 +10,9 @@ const EAT_RADIUS = 20;
 const WALKABLE_TOP_RATIO = 0.6;
 const EAT_ANIMATION_DURATION = 500;
 const WOLF_BASE_SPAWN_CHANCE = 0.15;
-const WOLF_SPEED = 70;
+const WOLF_SPEED = 55;
 const HOUSE_BASE_HEALTH = 100;
+const BASE_SHEEP_CAPACITY = 3;
 
 // --- НАСТРОЙКИ ВРЕМЕНИ СУТОК (НОЧИ УСКОРЕНЫ НА 25%) ---
 const CYCLE_STAGES = [
@@ -19,14 +20,14 @@ const CYCLE_STAGES = [
     { name: "Day 2", frameIndex: 1, duration: 60000 },
     { name: "Day 3", frameIndex: 2, duration: 60000 },  
     { name: "Day 4", frameIndex: 3, duration: 60000 },
-    { name: "Day 5", frameIndex: 4, duration: 45000 },  // Было 60000
-    { name: "Day 6", frameIndex: 5, duration: 45000 },  // Было 60000
-    { name: "Day 7", frameIndex: 6, duration: 45000 },  // Было 60000
-    { name: "Day 8", frameIndex: 7, duration: 90000 }   // Было 120000
+    { name: "Day 5", frameIndex: 4, duration: 45000 },
+    { name: "Day 6", frameIndex: 5, duration: 45000 },
+    { name: "Day 7", frameIndex: 6, duration: 45000 },
+    { name: "Day 8", frameIndex: 7, duration: 90000 }
 ];
 
-// --- Зоны препятствий ---
-const OBSTACLES = [ { x: 0, y: 0.6, width: 0.20, height: 0.35 }, { x: 0.80, y: 0.6, width: 0.20, height: 0.35 } ];
+// --- Зоны препятствий (уменьшены, чтобы расширить зону ходьбы) ---
+const OBSTACLES = [ { x: 0, y: 0.6, width: 0.15, height: 0.35 }, { x: 0.85, y: 0.6, width: 0.15, height: 0.35 } ];
 
 // --- ПОИСК ЭЛЕМЕНТОВ DOM ---
 const gameWorld = document.getElementById('game-world');
@@ -47,12 +48,15 @@ const goldAmountSpan = document.getElementById('gold-amount');
 const woodAmountSpan = document.getElementById('wood-amount');
 const brickAmountSpan = document.getElementById('brick-amount');
 const scissorsButton = document.getElementById('scissors-button');
+const grassButton = document.getElementById('grass-button');
 const shopButton = document.getElementById('shop-button');
 const shopMenu = document.getElementById('shop-menu');
 const closeShopButton = document.getElementById('close-shop-button');
 const loadingScreen = document.getElementById('loading-screen');
 const progressBar = document.getElementById('progress-bar');
 const gameContainer = document.getElementById('game-container');
+const gameOverScreen = document.getElementById('game-over-screen');
+const restartButton = document.getElementById('restart-button');
 
 
 // --- ИГРОВЫЕ РЕСУРСЫ ---
@@ -63,26 +67,24 @@ const CLOUD_SPRITES = ['images/clouds/cloud_1.png', 'images/clouds/cloud_2.png',
 const LOCATION_FRAMES = [ 'images/location/day_1.png','images/location/day_2.png','images/location/day_3.png','images/location/day_4.png','images/location/day_5.png','images/location/day_6.png','images/location/day_7.png','images/location/day_8.png' ];
 const HOUSE_SPRITES = { house_1: 'images/house/house_1.png', house_2: 'images/house/house_2.png', house_3: 'images/house/house_3.png', house_4: 'images/house/house_4.png' };
 const HUNGER_ICON_SRC = 'images/icons/hunger_icon.png';
+const GRASS_ICON_SRC = 'images/icons/grass_icon.png';
+const SCISSORS_ICON_SRC = 'images/scissors/scissors.png';
 
-// --- МАССИВ РЕСУРСОВ ДЛЯ ПРЕДЗАГРУЗКИ ---
+// --- МАССИВ РЕСУРСОВ ДЛЯ ПРЕДЗАГРУЗКИ (ТОЛЬКО ГРАФИКА) ---
 const ASSETS_TO_LOAD = [
     ...Object.values(sheepSprites), ...Object.values(baldSheepSprites), ...Object.values(wolfSprites),
     ...CLOUD_SPRITES, ...LOCATION_FRAMES, ...Object.values(HOUSE_SPRITES),
     'images/grass/grass.png', 'images/ground/ground.png', 'images/wool/wool.png', 'images/skin/skin.png',
-    'images/scissors/scissors.png', 'images/shop/shop.png', 'images/shop/shop_menu.png',
+    SCISSORS_ICON_SRC, 'images/shop/shop.png', 'images/shop/shop_menu.png',
     'images/gold/gold.png', 'images/tree/tree.png', 'images/brick/brick.png',
-    HUNGER_ICON_SRC,
-    'sound/day_sound.mp3', 'sound/night_song.mp3', 'sound/sheep_sound.mp3',
-    'sound/plant_sound.mp3', 'sound/eat_sound.mp3', 
-    'sound/wolf_attak.mp3', 
-    'sound/wolf_dead.mp3'
+    HUNGER_ICON_SRC, GRASS_ICON_SRC
 ];
 
 // --- ХРАНИЛИЩЕ ОБЪЕКТОВ И СОСТОЯНИЙ ---
-const sheep = [];
-const wolves = [];
-const clouds = [];
-const grassPatches = [];
+let sheep = [];
+let wolves = [];
+let clouds = [];
+let grassPatches = [];
 let currentHouse = null;
 let woolCount = 0;
 let skinCount = 0;
@@ -94,9 +96,13 @@ let hiddenBgLayer = bg2;
 let currentStageIndex = 0;
 let cycleDirection = 1;
 let isMusicStarted = false;
-let isShearMode = false;
+let currentTool = 'scissors';
+let isPaused = false;
 let wolfSpawnChance = WOLF_BASE_SPAWN_CHANCE;
 let GAME_DIMENSIONS = null;
+let scissorsLevel = 1;
+let woolPerShear = 1;
+let maxSheep = BASE_SHEEP_CAPACITY;
 
 // --- ИНИЦИАЛИЗАЦИЯ ГРОМКОСТИ ---
 if (daySound) daySound.volume = 0.3; if (nightSong) nightSong.volume = 0.3; if (sheepSound) sheepSound.volume = 0.5; if (plantSound) plantSound.volume = 0.25; if (eatSound) eatSound.volume = 0.25; if (wolfAttackSound) wolfAttackSound.volume = 0.6; if (wolfDeadSound) wolfDeadSound.volume = 0.6;
@@ -148,7 +154,7 @@ class Cloud {
 }
 
 class House {
-    constructor(type) {
+    constructor(type, capacity) {
         this.element = document.createElement('img');
         this.element.className = 'house';
         this.element.src = HOUSE_SPRITES[type];
@@ -162,6 +168,8 @@ class House {
         gameWorld.appendChild(this.element);
         
         this.health = HOUSE_BASE_HEALTH;
+        this.capacity = capacity;
+        maxSheep = this.capacity;
     }
 
     takeDamage(amount) {
@@ -177,6 +185,7 @@ class House {
     destroy() {
         this.element.remove();
         currentHouse = null;
+        maxSheep = BASE_SHEEP_CAPACITY;
         sheep.forEach(s => {
             s.isHiding = false;
             s.element.style.visibility = 'visible';
@@ -196,25 +205,45 @@ class Sheep {
         gameWorld.appendChild(this.hungerIcon);
 
         let startX, startY, attempts = 0;
+        
+        const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
+        const greenFieldHeight = GAME_DIMENSIONS.height - walkableTop;
+        const horizontalMargin = GAME_DIMENSIONS.width * 0.20;
+        const verticalMargin = greenFieldHeight * 0.20;
+
+        const minX = horizontalMargin;
+        const maxX = GAME_DIMENSIONS.width - horizontalMargin;
+        const minY = walkableTop + verticalMargin;
+        const maxY = GAME_DIMENSIONS.height - verticalMargin;
+
         do { 
-            const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO; 
-            startX = Math.random() * (GAME_DIMENSIONS.width - 16); 
-            startY = walkableTop + Math.random() * (GAME_DIMENSIONS.height - walkableTop - 16); 
+            startX = minX + Math.random() * (maxX - minX);
+            startY = minY + Math.random() * (maxY - minY);
             attempts++; 
             if (attempts > 50) break; 
         } while (isPointBlocked(startX, startY));
 
         this.x = startX; this.y = startY; this.element.style.transform = `translate(${this.x}px, ${this.y}px)`; this.element.style.visibility = 'visible';
         this.targetX = this.x; this.targetY = this.y; this.isWaiting = true; this.isEating = false; this.isSheared = false; this.isScared = false; this.isHiding = false; this.isHungry = false;
-        this.waitTimer = setTimeout(() => this.findNewTarget(), Math.random() * MAX_WAIT_TIME);
+        this.waitTimer = setTimeout(() => this.decideNextAction(), Math.random() * MAX_WAIT_TIME);
         this.element.addEventListener('pointerdown', (e) => { e.stopPropagation(); this.tryShear(); });
     }
 
-    findNearestGrass() {
-        if (grassPatches.length === 0) {
-            this.isWaiting = true;
-            return;
+    decideNextAction() {
+        this.isWaiting = false;
+        clearTimeout(this.waitTimer);
+        let foundGrass = false;
+        if (this.isHungry) {
+            foundGrass = this.findNearestGrass();
         }
+        
+        if (!foundGrass) {
+            this.findNewTarget();
+        }
+    }
+
+    findNearestGrass() {
+        if (grassPatches.length === 0) return false;
 
         let closestGrass = null;
         let minDistance = Infinity;
@@ -232,103 +261,119 @@ class Sheep {
         if (closestGrass) {
             this.targetX = closestGrass.x;
             this.targetY = closestGrass.y;
-            this.isWaiting = false;
+            return true;
         }
+        return false;
     }
 
     findNewTarget() {
         if (this.isHiding) return;
         let newTargetX, newTargetY, attempts = 0;
+        
+        const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
+        const greenFieldHeight = GAME_DIMENSIONS.height - walkableTop;
+        const horizontalMargin = GAME_DIMENSIONS.width * 0.20;
+        const verticalMargin = greenFieldHeight * 0.20;
+
+        const minX = horizontalMargin;
+        const maxX = GAME_DIMENSIONS.width - horizontalMargin;
+        const minY = walkableTop + verticalMargin;
+        const maxY = GAME_DIMENSIONS.height - verticalMargin;
+
         do { 
-            const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO; 
-            newTargetX = Math.random() * (GAME_DIMENSIONS.width - 16); 
-            newTargetY = walkableTop + Math.random() * (GAME_DIMENSIONS.height - walkableTop - 16); 
+            newTargetX = minX + Math.random() * (maxX - minX);
+            newTargetY = minY + Math.random() * (maxY - minY);
             attempts++; 
             if (attempts > 50) break; 
         } while (isPointBlocked(newTargetX, newTargetY));
-        this.targetX = newTargetX; this.targetY = newTargetY; this.isWaiting = false; clearTimeout(this.waitTimer);
+
+        this.targetX = newTargetX; this.targetY = newTargetY;
     }
 
     update(deltaTime) {
         if (this.isHiding || this.isEating || this.isScared) return;
 
         const isNight = currentStageIndex > 4;
-        if (isNight) {
-            if (currentHouse) {
-                this.targetX = currentHouse.x + 25;
-                this.targetY = currentHouse.y + 50;
-                const dx = this.targetX - this.x;
-                const dy = this.targetY - this.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance < 10) {
-                    this.isHiding = true;
-                    this.element.style.visibility = 'hidden';
-                    this.hungerIcon.style.visibility = 'hidden';
-                    return;
-                }
-            } else {
-                // TODO: Логика сбивания в кучу
+        if (isNight && currentHouse) {
+            this.targetX = currentHouse.x + 25;
+            this.targetY = currentHouse.y + 50;
+            const dx_h = this.targetX - this.x;
+            const dy_h = this.targetY - this.y;
+            const distance_h = Math.sqrt(dx_h * dx_h + dy_h * dy_h);
+            if (distance_h < 10) {
+                this.isHiding = true;
+                this.element.style.visibility = 'hidden';
+                this.hungerIcon.style.visibility = 'hidden';
+                return;
             }
         }
 
         const currentSprites = this.isSheared ? baldSheepSprites : sheepSprites;
 
-        if (this.isWaiting) {
-            if (this.isHungry) {
-                this.findNearestGrass();
-            }
-            for (let i = grassPatches.length - 1; i >= 0; i--) {
-                const grass = grassPatches[i]; const dx = this.x - grass.x; const dy = this.y - grass.y; const distance = Math.sqrt(dx*dx + dy*dy);
-                if (distance < EAT_RADIUS) {
-                    this.isEating = true; this.element.src = currentSprites.eat; playSound(eatSound);
+        for (let i = grassPatches.length - 1; i >= 0; i--) {
+            const grass = grassPatches[i];
+            const distanceToGrass = Math.sqrt(Math.pow(this.x - grass.x, 2) + Math.pow(this.y - grass.y, 2));
+            if (distanceToGrass < EAT_RADIUS) {
+                this.isEating = true;
+                this.element.src = currentSprites.eat;
+                playSound(eatSound);
+                setTimeout(() => {
+                    grass.element.src = 'images/ground/ground.png';
+                    grassPatches.splice(i, 1);
+                    this.element.src = currentSprites.front;
+                    this.isEating = false;
+                    if (this.isHungry) {
+                        this.isSheared = false;
+                        this.isHungry = false;
+                        this.hungerIcon.style.visibility = 'hidden';
+                    }
+                    this.decideNextAction();
+                    
                     setTimeout(() => {
-                        grass.element.src = 'images/ground/ground.png'; grassPatches.splice(i, 1); this.element.src = currentSprites.front; this.isEating = false; 
-                        
-                        if (this.isHungry) {
-                            this.isSheared = false;
-                            this.isHungry = false;
-                            this.hungerIcon.style.visibility = 'hidden';
-                        }
-
-                        setTimeout(() => {
-                            grass.element.style.transition = 'opacity 0.5s'; grass.element.style.opacity = 0;
-                            setTimeout(() => grass.element.remove(), 500);
-                        }, GRASS_DISAPPEAR_TIME);
-                    }, EAT_ANIMATION_DURATION);
-                    return;
-                }
+                        grass.element.style.transition = 'opacity 0.5s';
+                        grass.element.style.opacity = 0;
+                        setTimeout(() => grass.element.remove(), 500);
+                    }, GRASS_DISAPPEAR_TIME);
+                }, EAT_ANIMATION_DURATION);
+                return;
             }
-            return;
         }
-
-        const dx = this.targetX - this.x; const dy = this.targetY - this.y; const distance = Math.sqrt(dx*dx + dy*dy);
-        if (distance < 1) { 
-            this.isWaiting = true; 
-            this.element.src = currentSprites.front; 
-            // ИСПРАВЛЕНИЕ: Голодная овца не ищет новый маршрут, а ждет, чтобы поесть.
-            if (!this.isHungry) {
-                this.waitTimer = setTimeout(() => this.findNewTarget(), MIN_WAIT_TIME + Math.random() * (MAX_WAIT_TIME - MIN_WAIT_TIME)); 
-            }
-            return; 
-        }
-        const moveX = (dx / distance) * SHEEP_SPEED * deltaTime; const moveY = (dy / distance) * SHEEP_SPEED * deltaTime;
-        this.x += moveX; this.y += moveY;
-        if (Math.abs(dx) > Math.abs(dy)) { this.element.src = dx > 0 ? currentSprites.right : currentSprites.left; } else { this.element.src = dy > 0 ? currentSprites.front : currentSprites.back; }
-        this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
         
+        const dx = this.targetX - this.x;
+        const dy = this.targetY - this.y;
+        const distanceToTarget = Math.sqrt(dx * dx + dy * dy);
+
+        if (distanceToTarget < 1) {
+            if (!this.isWaiting) {
+                this.isWaiting = true;
+                this.waitTimer = setTimeout(() => {
+                    this.isWaiting = false;
+                    this.decideNextAction();
+                }, MIN_WAIT_TIME + Math.random() * (MAX_WAIT_TIME - MIN_WAIT_TIME));
+            }
+        } else {
+            const moveX = (dx / distanceToTarget) * SHEEP_SPEED * deltaTime;
+            const moveY = (dy / distanceToTarget) * SHEEP_SPEED * deltaTime;
+            this.x += moveX;
+            this.y += moveY;
+            if (Math.abs(dx) > Math.abs(dy)) {
+                this.element.src = dx > 0 ? currentSprites.right : currentSprites.left;
+            } else {
+                this.element.src = dy > 0 ? currentSprites.front : currentSprites.back;
+            }
+            this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+        }
+
         this.hungerIcon.style.transform = `translate(${this.x + 3}px, ${this.y - 14}px)`;
     }
+
     tryShear() {
-        if (isShearMode && !this.isSheared) {
+        if (currentTool === 'scissors' && !this.isSheared) {
             this.isSheared = true;
             this.isHungry = true;
             this.hungerIcon.style.visibility = 'visible';
-            spawnWool(this.x, this.y);
-            this.findNearestGrass();
-
-            isShearMode = false;
-            scissorsButton.classList.remove('active');
-            document.body.style.cursor = 'default';
+            spawnWool(this.x, this.y, woolPerShear);
+            this.decideNextAction();
         }
     }
 }
@@ -339,7 +384,7 @@ class Wolf {
         this.element.src = wolfSprites.left;
         gameWorld.appendChild(this.element);
         this.fromLeft = Math.random() < 0.5;
-        this.x = this.fromLeft ? -30 : GAME_DIMENSIONS.width + 30;
+        this.x = this.fromLeft ? -50 : GAME_DIMENSIONS.width + 50;
         const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
         this.y = walkableTop + Math.random() * (GAME_DIMENSIONS.height - walkableTop - 30);
         this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
@@ -385,7 +430,12 @@ class Wolf {
                 const wolfIndex = wolves.indexOf(this);
                 if (wolfIndex > -1) wolves.splice(wolfIndex, 1);
                 const sheepIndex = sheep.indexOf(this.draggedSheep);
-                if (sheepIndex > -1) sheep.splice(sheepIndex, 1);
+                if (sheepIndex > -1) {
+                    sheep.splice(sheepIndex, 1);
+                    if (sheep.length === 0) {
+                        gameOver();
+                    }
+                }
                 return;
             }
             const moveX = (dx / distance) * WOLF_SPEED * deltaTime;
@@ -408,14 +458,15 @@ class Wolf {
             targetX = this.targetSheep.x;
             targetY = this.targetSheep.y;
         } else {
-            return;
+            targetX = GAME_DIMENSIONS.width / 2;
+            targetY = GAME_DIMENSIONS.height * 0.8;
         }
 
         const dx = targetX - this.x;
         const dy = targetY - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance < 15) {
+        if (distance < 15 && this.targetSheep) {
             if (this.targetHouse) this.attackHouse(this.targetHouse);
             else if (this.targetSheep) this.capture(this.targetSheep);
             return;
@@ -485,12 +536,12 @@ function spawnGrass(px, py) {
     
     sheep.forEach(s => {
         if (s.isHungry && s.isWaiting) {
-            s.findNearestGrass();
+            s.decideNextAction();
         }
     });
 }
-function spawnWool(px, py) {
-    woolCount++;
+function spawnWool(px, py, amount = 1) {
+    woolCount += amount;
     updateResourceCounters();
     const woolElement = document.createElement('img');
     woolElement.src = 'images/wool/wool.png';
@@ -498,10 +549,7 @@ function spawnWool(px, py) {
     woolElement.style.transform = `translate(${px}px, ${py}px)`;
     woolElement.style.visibility = 'visible';
     gameWorld.appendChild(woolElement);
-    setTimeout(() => {
-        woolElement.style.opacity = 0;
-        setTimeout(() => woolElement.remove(), 500);
-    }, 2000);
+    animateResourceToUI(woolElement, 'wool-counter');
 }
 function spawnSkin(px, py) {
     skinCount++;
@@ -512,15 +560,36 @@ function spawnSkin(px, py) {
     skinElement.style.transform = `translate(${px}px, ${py}px)`;
     skinElement.style.visibility = 'visible';
     gameWorld.appendChild(skinElement);
-    setTimeout(() => {
-        skinElement.style.opacity = 0;
-        setTimeout(() => skinElement.remove(), 500);
-    }, 2000);
+    animateResourceToUI(skinElement, 'skin-counter');
 }
 function spawnWolf() {
+    if (isPaused) return;
     if (Math.random() < wolfSpawnChance) {
         wolves.push(new Wolf());
     }
+}
+
+function animateResourceToUI(element, targetCounterId) {
+    const targetCounter = document.getElementById(targetCounterId);
+    if (!targetCounter) {
+        element.remove();
+        return;
+    }
+
+    const gameWorldRect = gameWorld.getBoundingClientRect();
+    const endRect = targetCounter.getBoundingClientRect();
+    
+    const endX = endRect.left - gameWorldRect.left + (endRect.width / 2);
+    const endY = endRect.top - gameWorldRect.top + (endRect.height / 2);
+
+    requestAnimationFrame(() => {
+        element.style.transform = `translate(${endX}px, ${endY}px) scale(0.5)`;
+        element.style.opacity = '0.5';
+    });
+
+    setTimeout(() => {
+        element.remove();
+    }, 1000);
 }
 
 // --- УПРАВЛЕНИЕ МУЗЫКОЙ И ФОНОМ ---
@@ -550,7 +619,7 @@ function updateBackground(frameIndex) {
     const isNight = frameIndex > 3;
     clouds.forEach(cloud => cloud.element.classList.toggle('night', isNight));
 
-    if (frameIndex === 3) { // Day 4
+    if (frameIndex === 2) { // Овцы выходят на 3-й день
         sheep.forEach(s => {
             if (s.isHiding) {
                 s.isHiding = false;
@@ -562,19 +631,24 @@ function updateBackground(frameIndex) {
             }
         });
     }
-
+    
+    let baseChance = WOLF_BASE_SPAWN_CHANCE;
     if (frameIndex >= 4 && frameIndex <= 7) {
-        wolfSpawnChance = WOLF_BASE_SPAWN_CHANCE * (1 + (frameIndex - 4) * 0.1);
+        baseChance *= (1 + (frameIndex - 4) * 0.1);
     } else if (frameIndex < 4) {
         const daysPastPeak = 7 - (currentStageIndex - 1);
         if (daysPastPeak > 0 && daysPastPeak <= 4) {
-             wolfSpawnChance = WOLF_BASE_SPAWN_CHANCE * (1 + (4 - daysPastPeak) * 0.1);
-        } else {
-            wolfSpawnChance = WOLF_BASE_SPAWN_CHANCE;
+             baseChance *= (1 + (4 - daysPastPeak) * 0.1);
         }
     }
+
+    wolfSpawnChance = isNight ? baseChance * 1.10 : baseChance;
 }
 function runNextStage() { 
+    if (isPaused) {
+        setTimeout(runNextStage, 100);
+        return;
+    }
     if (currentStageIndex >= CYCLE_STAGES.length) { 
         cycleDirection = -1; 
         currentStageIndex = CYCLE_STAGES.length - 2; 
@@ -590,6 +664,25 @@ function runNextStage() {
 }
 
 // --- ЛОГИКА МАГАЗИНА ---
+function updateShopUI() {
+    document.getElementById('shop-gold').textContent = goldCount;
+    document.getElementById('shop-wood').textContent = woodCount;
+    document.getElementById('shop-brick').textContent = brickCount;
+    document.getElementById('sheep-capacity-info').textContent = `${sheep.length}/${maxSheep}`;
+
+    const upgradeButton = document.getElementById('upgrade-scissors-button');
+    const nextLevel = scissorsLevel + 1;
+    const cost = 150 * Math.pow(2, scissorsLevel - 1);
+    upgradeButton.dataset.costGold = cost;
+    upgradeButton.querySelector('.item-name').textContent = `Upgrade Scissors (Lvl ${nextLevel})`;
+    upgradeButton.querySelector('.cost-resource').innerHTML = `<img src="images/gold/gold.png" alt="gold"> ${cost}`;
+
+    const buySheepButton = document.getElementById('buy-sheep-button');
+    const sheepCost = 50 * Math.pow(1.5, sheep.length - 1);
+    buySheepButton.dataset.costGold = Math.ceil(sheepCost);
+    buySheepButton.querySelector('.cost-resource').innerHTML = `<img src="images/gold/gold.png" alt="gold"> ${Math.ceil(sheepCost)}`;
+}
+
 function handleShopTransaction(event) {
     const button = event.target.closest('.shop-item');
     if (!button) return;
@@ -599,37 +692,67 @@ function handleShopTransaction(event) {
     const costWood = parseInt(button.dataset.costWood) || 0;
     const costBrick = parseInt(button.dataset.costBrick) || 0;
     const valueGold = parseInt(button.dataset.valueGold) || 0;
+    const capacity = parseInt(button.dataset.capacity) || 0;
 
-    if (costGold > 0) {
+    let purchaseSuccess = false;
+
+    if (item === 'upgrade_scissors') {
+        if (goldCount >= costGold) {
+            goldCount -= costGold;
+            scissorsLevel++;
+            woolPerShear++;
+            purchaseSuccess = true;
+        }
+    } else if (item === 'buy_sheep') {
+        if (goldCount >= costGold && sheep.length < maxSheep) {
+            goldCount -= costGold;
+            sheep.push(new Sheep());
+            purchaseSuccess = true;
+        }
+    } else if (item.startsWith('house')) {
         if (goldCount >= costGold && woodCount >= costWood && brickCount >= costBrick) {
             goldCount -= costGold;
             woodCount -= costWood;
             brickCount -= costBrick;
-            
-            if (item.startsWith('house')) {
-                if (currentHouse) currentHouse.destroy();
-                currentHouse = new House(item);
-            } else if (item === 'wood') {
-                woodCount++;
-            } else if (item === 'brick') {
-                brickCount++;
-            }
-        } else {
-            console.log("Недостаточно ресурсов!");
+            if (currentHouse) currentHouse.destroy();
+            currentHouse = new House(item, capacity);
+            purchaseSuccess = true;
         }
-    }
-    else if (valueGold > 0) {
-        if (item === 'sell_wool' && woolCount > 0) {
-            woolCount--;
-            goldCount += valueGold;
-        } else if (item === 'sell_skin' && skinCount > 0) {
-            skinCount--;
-            goldCount += valueGold;
+    } else if (item === 'wood') {
+        if (goldCount >= costGold) {
+            goldCount -= costGold;
+            woodCount++;
+            purchaseSuccess = true;
         }
+    } else if (item === 'brick') {
+        if (goldCount >= costGold) {
+            goldCount -= costGold;
+            brickCount++;
+            purchaseSuccess = true;
+        }
+    } else if (item === 'sell_wool' && woolCount > 0) {
+        woolCount--;
+        goldCount += valueGold;
+        purchaseSuccess = true;
+    } else if (item === 'sell_skin' && skinCount > 0) {
+        skinCount--;
+        goldCount += valueGold;
+        purchaseSuccess = true;
     }
+
+    button.classList.add(purchaseSuccess ? 'purchase-success' : 'purchase-fail');
+    setTimeout(() => {
+        button.classList.remove('purchase-success', 'purchase-fail');
+    }, 500);
+
     updateResourceCounters();
+    updateShopUI();
 }
 
+function gameOver() {
+    isPaused = true;
+    gameOverScreen.classList.remove('hidden');
+}
 
 // --- ИНИЦИАЛИЗАЦИЯ И ЗАПУСК ---
 function initializeGame() {
@@ -643,12 +766,20 @@ function initializeGame() {
     }
 
     updateResourceCounters();
+    scissorsButton.style.backgroundImage = `url('${SCISSORS_ICON_SRC}')`;
+    grassButton.style.backgroundImage = `url('${GRASS_ICON_SRC}')`;
+    document.body.style.cursor = `url('${SCISSORS_ICON_SRC}'), auto`;
 
     for (let i = 0; i < NUM_CLOUDS; i++) { clouds.push(new Cloud()); }
-    for (let i = 0; i < NUM_SHEEP; i++) { sheep.push(new Sheep()); }
+    for (let i = 0; i < STARTING_SHEEP; i++) { sheep.push(new Sheep()); }
     
     let lastTime = 0;
     function gameLoop(currentTime) { 
+        if (isPaused) {
+            lastTime = currentTime;
+            requestAnimationFrame(gameLoop);
+            return;
+        }
         if (lastTime === 0) lastTime = currentTime; 
         const deltaTime = (currentTime - lastTime) / 1000; 
         lastTime = currentTime; 
@@ -668,21 +799,41 @@ function initializeGame() {
         }
         const x = event.clientX - GAME_DIMENSIONS.left;
         const y = event.clientY - GAME_DIMENSIONS.top;
-        if (!isShearMode) spawnGrass(x, y);
+        if (currentTool === 'grass') {
+            spawnGrass(x, y);
+        }
     });
 
     scissorsButton.addEventListener('click', () => {
-        isShearMode = !isShearMode;
-        scissorsButton.classList.toggle('active');
-        document.body.style.cursor = isShearMode ? `url('images/scissors/scissors.png'), auto` : 'default';
+        currentTool = 'scissors';
+        document.body.style.cursor = `url('${SCISSORS_ICON_SRC}'), auto`;
+        scissorsButton.classList.add('active');
+        grassButton.classList.remove('active');
     });
 
-    shopButton.addEventListener('click', () => shopMenu.classList.remove('hidden'));
-    closeShopButton.addEventListener('click', () => shopMenu.classList.add('hidden'));
+    grassButton.addEventListener('click', () => {
+        currentTool = 'grass';
+        document.body.style.cursor = `url('${GRASS_ICON_SRC}'), auto`;
+        grassButton.classList.add('active');
+        scissorsButton.classList.remove('active');
+    });
+
+    shopButton.addEventListener('click', () => {
+        isPaused = true;
+        updateShopUI();
+        shopMenu.classList.remove('hidden');
+    });
+    closeShopButton.addEventListener('click', () => {
+        isPaused = false;
+        shopMenu.classList.add('hidden');
+    });
     shopMenu.addEventListener('click', handleShopTransaction);
+    restartButton.addEventListener('click', () => {
+        location.reload();
+    });
 
 
-    setInterval(() => { playSound(sheepSound); }, 7000 + Math.random() * 8000);
+    setInterval(() => { if (!isPaused) playSound(sheepSound); }, 7000 + Math.random() * 8000);
     setInterval(spawnWolf, 1000);
 }
 
@@ -714,16 +865,8 @@ function preloadAssets() {
                 assetLoaded();
             };
             img.src = src;
-        } else if (src.endsWith('.mp3')) {
-            const audio = new Audio();
-            audio.addEventListener('canplaythrough', assetLoaded, { once: true });
-            audio.onerror = () => {
-                console.error(`Не удалось загрузить аудио: ${src}`);
-                assetLoaded();
-            };
-            audio.src = src;
         } else {
-            assetLoaded(); 
+            assetLoaded();
         }
     });
 }
