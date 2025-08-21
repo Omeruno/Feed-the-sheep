@@ -4,8 +4,9 @@ body {
     margin: 0;
     overflow: hidden;
     background-color: #000;
-    user-select: none;
-    -webkit-user-select: none;
+    user-select: none; /* Запрещаем выделение на ПК */
+    -webkit-user-select: none; /* Для Safari */
+    touch-action: none; /* Отключаем зум и другие жесты на мобильных */
 }
 
 #game-container {
