@@ -49,10 +49,14 @@
                 <span id="gold-amount">100</span>
             </div>
 
-            <div id="action-buttons-container">
-                <button id="grass-button" class="ui-element tool-button"></button>
-                <button id="scissors-button" class="ui-element tool-button active"></button>
-                <button id="shop-button" class="ui-element tool-button"></button>
+            <div id="main-actions-container">
+                <div id="action-buttons-panel">
+                    <button id="repair-button" class="ui-element tool-button hidden"></button>
+                    <button id="grass-button" class="ui-element tool-button"></button>
+                    <button id="scissors-button" class="ui-element tool-button active"></button>
+                    <button id="shop-button" class="ui-element tool-button"></button>
+                </div>
+                <button id="menu-toggle-button" class="ui-element tool-button">▶</button>
             </div>
         </div>
 
@@ -119,6 +123,12 @@
                 <div class="shop-section">
                     <h2>Buy</h2>
                     <div class="shop-items">
+                         <button class="shop-item" data-item="buy_hammer" data-cost-gold="75">
+                            <span class="item-name">Buy Repair Hammer</span>
+                            <div class="item-cost">
+                                <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 75</span>
+                            </div>
+                        </button>
                         <button class="shop-item" id="buy-sheep-button" data-item="buy_sheep" data-cost-gold="50">
                             <span class="item-name">Buy Sheep</span>
                             <div class="item-cost">

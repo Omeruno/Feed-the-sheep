@@ -7,7 +7,7 @@ const MAX_WAIT_TIME = 5000;
 const GRASS_DISAPPEAR_TIME = 10000;
 const GRASS_SIZE = 25;
 const EAT_RADIUS = 20;
-const WALKABLE_TOP_RATIO = 0.6;
+const WALKABLE_TOP_RATIO = 0.55;
 const EAT_ANIMATION_DURATION = 500;
 const WOLF_BASE_SPAWN_CHANCE = 0.15;
 const WOLF_SPEED = 55;
@@ -50,6 +50,7 @@ const brickAmountSpan = document.getElementById('brick-amount');
 const scissorsButton = document.getElementById('scissors-button');
 const grassButton = document.getElementById('grass-button');
 const shopButton = document.getElementById('shop-button');
+const repairButton = document.getElementById('repair-button');
 const shopMenu = document.getElementById('shop-menu');
 const closeShopButton = document.getElementById('close-shop-button');
 const loadingScreen = document.getElementById('loading-screen');
@@ -57,6 +58,8 @@ const progressBar = document.getElementById('progress-bar');
 const gameContainer = document.getElementById('game-container');
 const gameOverScreen = document.getElementById('game-over-screen');
 const restartButton = document.getElementById('restart-button');
+const menuToggleButton = document.getElementById('menu-toggle-button');
+const mainActionsContainer = document.getElementById('main-actions-container');
 
 
 // --- ИГРОВЫЕ РЕСУРСЫ ---
@@ -69,6 +72,7 @@ const HOUSE_SPRITES = { house_1: 'images/house/house_1.png', house_2: 'images/ho
 const HUNGER_ICON_SRC = 'images/icons/hunger_icon.png';
 const GRASS_ICON_SRC = 'images/icons/grass_icon.png';
 const SCISSORS_ICON_SRC = 'images/scissors/scissors.png';
+const REPAIR_ICON_SRC = 'images/icons/repair_icon.png';
 
 // --- МАССИВ РЕСУРСОВ ДЛЯ ПРЕДЗАГРУЗКИ (ТОЛЬКО ГРАФИКА) ---
 const ASSETS_TO_LOAD = [
@@ -77,7 +81,7 @@ const ASSETS_TO_LOAD = [
     'images/grass/grass.png', 'images/ground/ground.png', 'images/wool/wool.png', 'images/skin/skin.png',
     SCISSORS_ICON_SRC, 'images/shop/shop.png', 'images/shop/shop_menu.png',
     'images/gold/gold.png', 'images/tree/tree.png', 'images/brick/brick.png',
-    HUNGER_ICON_SRC, GRASS_ICON_SRC
+    HUNGER_ICON_SRC, GRASS_ICON_SRC, REPAIR_ICON_SRC
 ];
 
 // --- ХРАНИЛИЩЕ ОБЪЕКТОВ И СОСТОЯНИЙ ---
@@ -103,6 +107,7 @@ let GAME_DIMENSIONS = null;
 let scissorsLevel = 1;
 let woolPerShear = 1;
 let maxSheep = BASE_SHEEP_CAPACITY;
+let hasRepairHammer = false;
 
 // --- ИНИЦИАЛИЗАЦИЯ ГРОМКОСТИ ---
 if (daySound) daySound.volume = 0.3; if (nightSong) nightSong.volume = 0.3; if (sheepSound) sheepSound.volume = 0.5; if (plantSound) plantSound.volume = 0.25; if (eatSound) eatSound.volume = 0.25; if (wolfAttackSound) wolfAttackSound.volume = 0.6; if (wolfDeadSound) wolfDeadSound.volume = 0.6;
@@ -170,10 +175,26 @@ class House {
         this.health = HOUSE_BASE_HEALTH;
         this.capacity = capacity;
         maxSheep = this.capacity;
+
+        // Создание HP бара
+        this.hpBarContainer = document.createElement('div');
+        this.hpBarContainer.className = 'hp-bar-container';
+        this.hpBar = document.createElement('div');
+        this.hpBar.className = 'hp-bar';
+        this.hpBarContainer.appendChild(this.hpBar);
+        gameWorld.appendChild(this.hpBarContainer);
+        this.updateHpBar();
+    }
+
+    updateHpBar() {
+        this.hpBar.style.width = `${(this.health / HOUSE_BASE_HEALTH) * 100}%`;
+        this.hpBarContainer.style.transform = `translate(${this.x + 25}px, ${this.y - 10}px)`;
+        this.hpBarContainer.style.visibility = 'visible';
     }
 
     takeDamage(amount) {
-        this.health -= amount;
+        this.health = Math.max(0, this.health - amount);
+        this.updateHpBar();
         this.element.classList.add('taking-damage');
         setTimeout(() => this.element.classList.remove('taking-damage'), 100);
 
@@ -181,9 +202,15 @@ class House {
             this.destroy();
         }
     }
+    
+    repair() {
+        this.health = HOUSE_BASE_HEALTH;
+        this.updateHpBar();
+    }
 
     destroy() {
         this.element.remove();
+        this.hpBarContainer.remove();
         currentHouse = null;
         maxSheep = BASE_SHEEP_CAPACITY;
         sheep.forEach(s => {
@@ -293,7 +320,7 @@ class Sheep {
     update(deltaTime) {
         if (this.isHiding || this.isEating || this.isScared) return;
 
-        const isNight = currentStageIndex > 4;
+        const isNight = currentStageIndex >= 3;
         if (isNight && currentHouse) {
             this.targetX = currentHouse.x + 25;
             this.targetY = currentHouse.y + 50;
@@ -405,7 +432,7 @@ class Wolf {
     }
 
     update(deltaTime) {
-        const isNight = currentStageIndex > 4;
+        const isNight = currentStageIndex >= 3;
         if (isNight && currentHouse && sheep.some(s => s.isHiding)) {
             this.targetHouse = currentHouse;
             this.targetSheep = null;
@@ -426,7 +453,7 @@ class Wolf {
             const distance = Math.sqrt(dx * dx + dy * dy);
             if (distance < 10) {
                 this.element.remove();
-                this.draggedSheep.element.remove();
+                if(this.draggedSheep) this.draggedSheep.element.remove();
                 const wolfIndex = wolves.indexOf(this);
                 if (wolfIndex > -1) wolves.splice(wolfIndex, 1);
                 const sheepIndex = sheep.indexOf(this.draggedSheep);
@@ -442,9 +469,11 @@ class Wolf {
             this.x += moveX;
             this.element.src = this.fromLeft ? wolfSprites.left : wolfSprites.right;
             this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
-            this.draggedSheep.x = this.x + (this.fromLeft ? 15 : -15);
-            this.draggedSheep.y = this.y;
-            this.draggedSheep.element.style.transform = `translate(${this.draggedSheep.x}px, ${this.draggedSheep.y}px)`;
+            if(this.draggedSheep) {
+                this.draggedSheep.x = this.x + (this.fromLeft ? 15 : -15);
+                this.draggedSheep.y = this.y;
+                this.draggedSheep.element.style.transform = `translate(${this.draggedSheep.x}px, ${this.draggedSheep.y}px)`;
+            }
             return;
         }
 
@@ -510,9 +539,7 @@ class Wolf {
         this.isScared = true;
         if (this.isDragging && this.draggedSheep) {
             this.draggedSheep.isScared = false;
-            if (isPointBlocked(this.draggedSheep.x, this.draggedSheep.y)) {
-                this.draggedSheep.findNewTarget();
-            }
+            this.draggedSheep.decideNextAction();
         }
         spawnSkin(this.x, this.y);
         this.element.style.opacity = 0;
@@ -595,7 +622,7 @@ function animateResourceToUI(element, targetCounterId) {
 // --- УПРАВЛЕНИЕ МУЗЫКОЙ И ФОНОМ ---
 function manageBackgroundMusic(frameIndex) { 
     if (!isMusicStarted) return; 
-    if (frameIndex > 3) { 
+    if (frameIndex >= 3) { // Ночь с 4-го дня
         daySound.pause();
         nightSong.play().catch(e => {});
     } else { 
@@ -616,7 +643,7 @@ function updateBackground(frameIndex) {
     }; 
     img.src = nextImageSrc; 
     
-    const isNight = frameIndex > 3;
+    const isNight = frameIndex >= 3;
     clouds.forEach(cloud => cloud.element.classList.toggle('night', isNight));
 
     if (frameIndex === 2) { // Овцы выходят на 3-й день
@@ -726,7 +753,6 @@ function handleShopTransaction(event) {
         }
     } else if (item === 'brick') {
         if (goldCount >= costGold) {
-            goldCount -= costGold;
             brickCount++;
             purchaseSuccess = true;
         }
@@ -738,6 +764,13 @@ function handleShopTransaction(event) {
         skinCount--;
         goldCount += valueGold;
         purchaseSuccess = true;
+    } else if (item === 'buy_hammer') {
+        if (goldCount >= costGold && !hasRepairHammer) {
+            goldCount -= costGold;
+            hasRepairHammer = true;
+            repairButton.classList.remove('hidden');
+            purchaseSuccess = true;
+        }
     }
 
     button.classList.add(purchaseSuccess ? 'purchase-success' : 'purchase-fail');
@@ -768,6 +801,7 @@ function initializeGame() {
     updateResourceCounters();
     scissorsButton.style.backgroundImage = `url('${SCISSORS_ICON_SRC}')`;
     grassButton.style.backgroundImage = `url('${GRASS_ICON_SRC}')`;
+    repairButton.style.backgroundImage = `url('${REPAIR_ICON_SRC}')`;
     document.body.style.cursor = `url('${SCISSORS_ICON_SRC}'), auto`;
 
     for (let i = 0; i < NUM_CLOUDS; i++) { clouds.push(new Cloud()); }
@@ -801,6 +835,17 @@ function initializeGame() {
         const y = event.clientY - GAME_DIMENSIONS.top;
         if (currentTool === 'grass') {
             spawnGrass(x, y);
+        } else if (currentTool === 'repair' && currentHouse) {
+            const houseRect = currentHouse.element.getBoundingClientRect();
+            const gameRect = gameWorld.getBoundingClientRect();
+            if (event.clientX >= houseRect.left && event.clientX <= houseRect.right &&
+                event.clientY >= houseRect.top && event.clientY <= houseRect.bottom) {
+                currentHouse.repair();
+                hasRepairHammer = false;
+                repairButton.classList.add('hidden');
+                // Возвращаемся к ножницам
+                scissorsButton.click();
+            }
         }
     });
 
@@ -809,6 +854,7 @@ function initializeGame() {
         document.body.style.cursor = `url('${SCISSORS_ICON_SRC}'), auto`;
         scissorsButton.classList.add('active');
         grassButton.classList.remove('active');
+        repairButton.classList.remove('active');
     });
 
     grassButton.addEventListener('click', () => {
@@ -816,6 +862,17 @@ function initializeGame() {
         document.body.style.cursor = `url('${GRASS_ICON_SRC}'), auto`;
         grassButton.classList.add('active');
         scissorsButton.classList.remove('active');
+        repairButton.classList.remove('active');
+    });
+
+    repairButton.addEventListener('click', () => {
+        if (hasRepairHammer) {
+            currentTool = 'repair';
+            document.body.style.cursor = `url('${REPAIR_ICON_SRC}'), auto`;
+            repairButton.classList.add('active');
+            scissorsButton.classList.remove('active');
+            grassButton.classList.remove('active');
+        }
     });
 
     shopButton.addEventListener('click', () => {
@@ -830,6 +887,9 @@ function initializeGame() {
     shopMenu.addEventListener('click', handleShopTransaction);
     restartButton.addEventListener('click', () => {
         location.reload();
+    });
+    menuToggleButton.addEventListener('click', () => {
+        mainActionsContainer.classList.toggle('open');
     });
 
 

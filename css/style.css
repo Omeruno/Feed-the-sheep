@@ -4,9 +4,9 @@ body {
     margin: 0;
     overflow: hidden;
     background-color: #000;
-    user-select: none; /* Запрещаем выделение на ПК */
-    -webkit-user-select: none; /* Для Safari */
-    touch-action: none; /* Отключаем зум и другие жесты на мобильных */
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
 }
 
 #game-container {
@@ -16,6 +16,7 @@ body {
     justify-content: center;
     align-items: center;
     position: relative; 
+    touch-action: none;
 }
 
 #game-world {
@@ -26,6 +27,7 @@ body {
     position: relative;
     overflow: hidden;
     background-color: #3e3e3e;
+    touch-action: none;
 }
 
 .background-layer {
@@ -63,7 +65,7 @@ body {
     filter: brightness(0.6);
 }
 
-.sheep, .wolf, .wool-item, .skin-item, .house, .hunger-icon {
+.sheep, .wolf, .wool-item, .skin-item, .house, .hunger-icon, .hp-bar-container {
     position: absolute;
     transition: opacity 0.5s linear, filter 0.1s linear;
     z-index: 2;
@@ -71,8 +73,8 @@ body {
     object-fit: contain; 
 }
 
-.sheep { width: 19px; height: 19px; }
-.wolf { width: 37px; height: 37px; z-index: 3; cursor: pointer; }
+.sheep { width: 21px; height: 21px; }
+.wolf { width: 41px; height: 41px; z-index: 3; cursor: pointer; }
 
 .wool-item, .skin-item { 
     width: 20px; 
@@ -91,6 +93,23 @@ body {
     height: 12px;
     z-index: 3;
     pointer-events: none;
+}
+
+.hp-bar-container {
+    width: 50px;
+    height: 5px;
+    background-color: rgba(0,0,0,0.5);
+    border: 1px solid #fff;
+    border-radius: 3px;
+    z-index: 3;
+}
+
+.hp-bar {
+    width: 100%;
+    height: 100%;
+    background-color: #3498db;
+    border-radius: 2px;
+    transition: width 0.2s linear;
 }
 
 
@@ -117,6 +136,7 @@ body {
     max-height: 100vh;
     pointer-events: none;
     z-index: 10;
+    touch-action: none;
 }
 
 #resources-container {
@@ -158,14 +178,26 @@ body {
     margin-right: 6px;
 }
 
-#action-buttons-container {
+#main-actions-container {
     position: absolute;
     bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    right: 20px;
     display: flex;
-    gap: 15px;
+    align-items: center;
+    gap: 10px;
     pointer-events: auto;
+}
+
+#action-buttons-panel {
+    display: flex;
+    gap: 10px;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.3s ease-in-out;
+}
+
+#main-actions-container.open #action-buttons-panel {
+    transform: scaleX(1);
 }
 
 .tool-button {
@@ -175,7 +207,20 @@ body {
     background-position: center;
     background-repeat: no-repeat;
     cursor: pointer;
-    transition: background-color 0.2s, border-color 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, transform 0.3s ease-in-out;
+}
+
+#menu-toggle-button {
+    font-size: 24px;
+    color: white;
+    line-height: 35px;
+    transition: transform 0.3s ease-in-out;
+    width: 38px;
+    height: 38px;
+}
+
+#main-actions-container.open #menu-toggle-button {
+    transform: rotate(180deg);
 }
 
 #shop-button {
@@ -185,6 +230,10 @@ body {
 .tool-button.active {
     background-color: rgba(118, 255, 158, 0.5);
     border-color: #76ff9e;
+}
+
+.hidden {
+    display: none !important;
 }
 
 /* --- СТИЛИ МАГАЗИНА --- */
@@ -281,6 +330,8 @@ body {
     align-items: center;
     gap: 5px;
     transition: background-color 0.2s;
+    width: 85%;
+    margin: 0 auto;
 }
 .shop-item:hover { background-color: #c58654; }
 
