@@ -176,7 +176,6 @@ class House {
         this.capacity = capacity;
         maxSheep = this.capacity;
 
-        // Создание HP бара
         this.hpBarContainer = document.createElement('div');
         this.hpBarContainer.className = 'hp-bar-container';
         this.hpBar = document.createElement('div');
@@ -837,13 +836,11 @@ function initializeGame() {
             spawnGrass(x, y);
         } else if (currentTool === 'repair' && currentHouse) {
             const houseRect = currentHouse.element.getBoundingClientRect();
-            const gameRect = gameWorld.getBoundingClientRect();
             if (event.clientX >= houseRect.left && event.clientX <= houseRect.right &&
                 event.clientY >= houseRect.top && event.clientY <= houseRect.bottom) {
                 currentHouse.repair();
                 hasRepairHammer = false;
                 repairButton.classList.add('hidden');
-                // Возвращаемся к ножницам
                 scissorsButton.click();
             }
         }
@@ -932,6 +929,16 @@ function preloadAssets() {
 }
 
 window.addEventListener('load', () => {
+    // ИСПРАВЛЕНИЕ: Добавляем обработчик для отмены двойного тапа на iOS
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(event) {
+        let now = new Date().getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+
     if (gameWorld) {
         preloadAssets();
     } else {

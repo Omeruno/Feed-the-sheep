@@ -4,9 +4,10 @@ body {
     margin: 0;
     overflow: hidden;
     background-color: #000;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: none;
+    -webkit-user-select: none; /* Safari */
+    user-select: none; /* Стандартный синтаксис */
+    -webkit-touch-callout: none; /* Отключаем меню при долгом нажатии на iOS */
+    touch-action: manipulation; /* ИСПРАВЛЕНИЕ: Запрещаем двойной тап для зума */
 }
 
 #game-container {
@@ -16,7 +17,6 @@ body {
     justify-content: center;
     align-items: center;
     position: relative; 
-    touch-action: none;
 }
 
 #game-world {
@@ -27,7 +27,6 @@ body {
     position: relative;
     overflow: hidden;
     background-color: #3e3e3e;
-    touch-action: none;
 }
 
 .background-layer {
@@ -136,7 +135,6 @@ body {
     max-height: 100vh;
     pointer-events: none;
     z-index: 10;
-    touch-action: none;
 }
 
 #resources-container {
