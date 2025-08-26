@@ -2,7 +2,6 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <!-- ИСПРАВЛЕНИЕ: Добавлен запрет на масштабирование для iOS -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Пастух</title>
     <link rel="stylesheet" href="css/style.css">
@@ -27,37 +26,48 @@
         </div>
         
         <div id="ui-layer">
-            <div id="resources-container">
-                <div id="wool-counter" class="ui-element resource-counter">
-                    <img src="images/wool/wool.png" alt="Шерсть">
-                    <span id="wool-amount">0</span>
-                </div>
-                <div id="skin-counter" class="ui-element resource-counter">
-                    <img src="images/skin/skin.png" alt="Шкура">
-                    <span id="skin-amount">0</span>
-                </div>
-                <div id="wood-counter" class="ui-element resource-counter">
-                    <img src="images/tree/tree.png" alt="Дерево">
-                    <span id="wood-amount">10</span>
-                </div>
-                <div id="brick-counter" class="ui-element resource-counter">
-                    <img src="images/brick/brick.png" alt="Кирпич">
-                    <span id="brick-amount">0</span>
+            <div id="resources-panel-container">
+                <button id="resources-toggle-button" class="ui-element"></button>
+                <div id="resources-container">
+                    <div id="wool-counter" class="ui-element resource-counter">
+                        <img src="images/wool/wool.png" alt="Шерсть">
+                        <span id="wool-amount">0</span>
+                    </div>
+                    <div id="skin-counter" class="ui-element resource-counter">
+                        <img src="images/skin/skin.png" alt="Шкура">
+                        <span id="skin-amount">0</span>
+                    </div>
+                    <div id="egg-counter" class="ui-element resource-counter">
+                        <img src="images/chicken/egg.png" alt="Яйцо">
+                        <span id="egg-amount">0</span>
+                    </div>
+                    <div id="wood-counter" class="ui-element resource-counter">
+                        <img src="images/tree/tree.png" alt="Дерево">
+                        <span id="wood-amount">10</span>
+                    </div>
+                    <div id="brick-counter" class="ui-element resource-counter">
+                        <img src="images/brick/brick.png" alt="Кирпич">
+                        <span id="brick-amount">0</span>
+                    </div>
                 </div>
             </div>
-            <div id="gold-counter" class="ui-element resource-counter">
-                <img src="images/gold/gold.png" alt="Золото">
-                <span id="gold-amount">100</span>
+
+            <div id="top-right-ui">
+                <div id="gold-counter" class="ui-element resource-counter">
+                    <img src="images/gold/gold.png" alt="Золото">
+                    <span id="gold-amount">30</span>
+                </div>
+                <button id="shop-button" class="ui-element tool-button"></button>
             </div>
+
 
             <div id="main-actions-container">
                 <div id="action-buttons-panel">
                     <button id="repair-button" class="ui-element tool-button hidden"></button>
                     <button id="grass-button" class="ui-element tool-button"></button>
                     <button id="scissors-button" class="ui-element tool-button active"></button>
-                    <button id="shop-button" class="ui-element tool-button"></button>
                 </div>
-                <button id="menu-toggle-button" class="ui-element tool-button">▶</button>
+                <button id="menu-toggle-button" class="ui-element tool-button"></button>
             </div>
         </div>
 
@@ -68,30 +78,30 @@
                 <button id="close-shop-button">X</button>
                 
                 <div id="shop-player-resources">
-                    <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> <span id="shop-gold">100</span></span>
+                    <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> <span id="shop-gold">30</span></span>
                     <span class="cost-resource"><img src="images/tree/tree.png" alt="wood"> <span id="shop-wood">10</span></span>
                     <span class="cost-resource"><img src="images/brick/brick.png" alt="brick"> <span id="shop-brick">0</span></span>
                 </div>
 
                 <div class="shop-section">
-                    <h2>House (<span id="sheep-capacity-info">0/3</span>)</h2>
+                    <h2>House (<span id="animal-capacity-info">0/3</span>)</h2>
                     <div class="shop-items">
                         <button class="shop-item" data-item="house_1" data-cost-gold="50" data-cost-wood="20" data-capacity="5">
-                            <span class="item-name">House 1 (+5 sheep)</span>
+                            <span class="item-name">House 1 (+5 capacity)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 50</span>
                                 <span class="cost-resource"><img src="images/tree/tree.png" alt="wood"> 20</span>
                             </div>
                         </button>
                         <button class="shop-item" data-item="house_2" data-cost-gold="100" data-cost-wood="40" data-capacity="7">
-                             <span class="item-name">House 2 (+7 sheep)</span>
+                             <span class="item-name">House 2 (+7 capacity)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 100</span>
                                 <span class="cost-resource"><img src="images/tree/tree.png" alt="wood"> 40</span>
                             </div>
                         </button>
                         <button class="shop-item" data-item="house_3" data-cost-gold="200" data-cost-wood="60" data-cost-brick="20" data-capacity="10">
-                             <span class="item-name">House 3 (+10 sheep)</span>
+                             <span class="item-name">House 3 (+10 capacity)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 200</span>
                                 <span class="cost-resource"><img src="images/tree/tree.png" alt="wood"> 60</span>
@@ -99,7 +109,7 @@
                             </div>
                         </button>
                         <button class="shop-item" data-item="house_4" data-cost-gold="400" data-cost-wood="100" data-cost-brick="50" data-capacity="15">
-                             <span class="item-name">House 4 (+15 sheep)</span>
+                             <span class="item-name">House 4 (+15 capacity)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 400</span>
                                 <span class="cost-resource"><img src="images/tree/tree.png" alt="wood"> 100</span>
@@ -136,6 +146,12 @@
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 50</span>
                             </div>
                         </button>
+                        <button class="shop-item" id="buy-chicken-button" data-item="buy_chicken" data-cost-gold="25">
+                            <span class="item-name">Buy Chicken</span>
+                            <div class="item-cost">
+                                <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 25</span>
+                            </div>
+                        </button>
                         <button class="shop-item" data-item="wood" data-cost-gold="10">
                             <span class="item-name">Buy Wood</span>
                             <div class="item-cost">
@@ -154,10 +170,10 @@
                 <div class="shop-section">
                     <h2>Sell</h2>
                     <div class="shop-items">
-                        <button class="shop-item" data-item="sell_wool" data-value-gold="2">
+                        <button class="shop-item" data-item="sell_wool" data-value-gold="7">
                             <span class="item-name">Sell Wool</span>
                             <div class="item-cost">
-                                <span class="cost-resource">+<img src="images/gold/gold.png" alt="gold"> 2</span>
+                                <span class="cost-resource">+<img src="images/gold/gold.png" alt="gold"> 7</span>
                             </div>
                         </button>
                         <button class="shop-item" data-item="sell_skin" data-value-gold="10">
@@ -165,6 +181,15 @@
                             <div class="item-cost">
                                 <span class="cost-resource">+<img src="images/gold/gold.png" alt="gold"> 10</span>
                             </div>
+                        </button>
+                        <button class="shop-item" data-item="sell_egg" data-value-gold="3">
+                            <span class="item-name">Sell Egg</span>
+                            <div class="item-cost">
+                                <span class="cost-resource">+<img src="images/gold/gold.png" alt="gold"> 3</span>
+                            </div>
+                        </button>
+                        <button class="shop-item sell-all-button" data-item="sell_all">
+                            <span class="item-name">Sell All</span>
                         </button>
                     </div>
                 </div>
@@ -174,7 +199,7 @@
         <div id="game-over-screen" class="hidden">
             <div class="game-over-box">
                 <h1>GAME OVER</h1>
-                <p>All your sheep have been stolen!</p>
+                <p>All your animals have been stolen!</p>
                 <button id="restart-button">Restart</button>
             </div>
         </div>
@@ -189,7 +214,10 @@
     <audio id="eat-sound" src="sound/eat_sound.mp3"></audio>
     <audio id="wolf-attack-sound"src="sound/wolf_attak.mp3"></audio>
     <audio id="wolf-dead-sound" src="sound/wolf_dead.mp3"></audio>
+    <audio id="chicken-sound" src="sound/chicken.mp3"></audio>
+    <audio id="chicken-ambient-sound" src="sound/chicken_1.mp3"></audio>
 
+    <script src="js/classes.js"></script>
     <script src="js/script.js"></script>
 </body>
 </html>
