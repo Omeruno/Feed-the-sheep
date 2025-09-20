@@ -10,11 +10,23 @@
 
     <div id="loading-screen">
         <div id="loading-background"></div>
-        <div id="loading-text">LOADING</div>
+        <div id="loading-text" data-translate-key="loading">ЗАГРУЗКА</div>
         <div id="progress-bar-container">
             <div id="progress-bar"></div>
         </div>
     </div>
+    
+    <!-- ДИАЛОГОВОЕ ОКНО С ДЕДОМ -->
+    <div id="grandfather-dialogue" class="hidden">
+        <div class="dialogue-box">
+            <img src="images/grandfather/grandfather.png" alt="Дед" class="character-image">
+            <div class="text-content">
+                <p id="dialogue-text"></p>
+                <button id="dialogue-continue" class="hidden" data-translate-key="dialogue_continue">Продолжить</button>
+            </div>
+        </div>
+    </div>
+
 
     <div id="game-container" style="display: none;">
         <div id="game-world">
@@ -26,28 +38,34 @@
         </div>
         
         <div id="ui-layer">
-            <div id="resources-panel-container">
-                <button id="resources-toggle-button" class="ui-element"></button>
-                <div id="resources-container">
-                    <div id="wool-counter" class="ui-element resource-counter">
-                        <img src="images/wool/wool.png" alt="Шерсть">
-                        <span id="wool-amount">0</span>
-                    </div>
-                    <div id="skin-counter" class="ui-element resource-counter">
-                        <img src="images/skin/skin.png" alt="Шкура">
-                        <span id="skin-amount">0</span>
-                    </div>
-                    <div id="egg-counter" class="ui-element resource-counter">
-                        <img src="images/chicken/egg.png" alt="Яйцо">
-                        <span id="egg-amount">0</span>
-                    </div>
-                    <div id="wood-counter" class="ui-element resource-counter">
-                        <img src="images/tree/tree.png" alt="Дерево">
-                        <span id="wood-amount">10</span>
-                    </div>
-                    <div id="brick-counter" class="ui-element resource-counter">
-                        <img src="images/brick/brick.png" alt="Кирпич">
-                        <span id="brick-amount">0</span>
+            <div id="top-left-ui">
+                <div id="resources-panel-container">
+                    <button id="resources-toggle-button" class="ui-element"></button>
+                    <div id="resources-container">
+                        <div id="wool-counter" class="ui-element resource-counter">
+                            <img src="images/wool/wool.png" alt="Шерсть">
+                            <span id="wool-amount">0</span>
+                        </div>
+                        <div id="skin-counter" class="ui-element resource-counter">
+                            <img src="images/skin/skin.png" alt="Шкура">
+                            <span id="skin-amount">0</span>
+                        </div>
+                        <div id="egg-counter" class="ui-element resource-counter">
+                            <img src="images/chicken/egg.png" alt="Яйцо">
+                            <span id="egg-amount">0</span>
+                        </div>
+                        <div id="milk-counter" class="ui-element resource-counter">
+                            <img src="images/icons/milk.png" alt="Молоко">
+                            <span id="milk-amount">0</span>
+                        </div>
+                         <div id="grass-seed-counter" class="ui-element resource-counter">
+                            <img src="images/icons/grass_icon.png" alt="Семена травы">
+                            <span id="grass-seed-amount">5</span>
+                        </div>
+                        <div id="hay-seed-counter" class="ui-element resource-counter">
+                            <img src="images/icons/rostock_small.png" alt="Семена сена">
+                            <span id="hay-seed-amount">0</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -58,14 +76,15 @@
                     <span id="gold-amount">30</span>
                 </div>
                 <button id="shop-button" class="ui-element tool-button"></button>
+                 <button id="settings-button" class="ui-element tool-button"></button>
             </div>
 
 
             <div id="main-actions-container">
                 <div id="action-buttons-panel">
                     <button id="repair-button" class="ui-element tool-button hidden"></button>
-                    <button id="grass-button" class="ui-element tool-button"></button>
-                    <button id="scissors-button" class="ui-element tool-button active"></button>
+                    <button id="hay-button" class="ui-element tool-button"></button>
+                    <button id="grass-button" class="ui-element tool-button active"></button>
                 </div>
                 <button id="menu-toggle-button" class="ui-element tool-button"></button>
             </div>
@@ -84,24 +103,24 @@
                 </div>
 
                 <div class="shop-section">
-                    <h2>House (<span id="animal-capacity-info">0/3</span>)</h2>
+                    <h2 data-translate-key="shop_house_title">Дом (<span id="animal-capacity-info">1/3</span>)</h2>
                     <div class="shop-items">
                         <button class="shop-item" data-item="house_1" data-cost-gold="50" data-cost-wood="20" data-capacity="5">
-                            <span class="item-name">House 1 (+5 capacity)</span>
+                            <span class="item-name" data-translate-key="shop_house1_name">Дом 1 (+5 мест)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 50</span>
                                 <span class="cost-resource"><img src="images/tree/tree.png" alt="wood"> 20</span>
                             </div>
                         </button>
                         <button class="shop-item" data-item="house_2" data-cost-gold="100" data-cost-wood="40" data-capacity="7">
-                             <span class="item-name">House 2 (+7 capacity)</span>
+                             <span class="item-name" data-translate-key="shop_house2_name">Дом 2 (+7 мест)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 100</span>
                                 <span class="cost-resource"><img src="images/tree/tree.png" alt="wood"> 40</span>
                             </div>
                         </button>
                         <button class="shop-item" data-item="house_3" data-cost-gold="200" data-cost-wood="60" data-cost-brick="20" data-capacity="10">
-                             <span class="item-name">House 3 (+10 capacity)</span>
+                             <span class="item-name" data-translate-key="shop_house3_name">Дом 3 (+10 мест)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 200</span>
                                 <span class="cost-resource"><img src="images/tree/tree.png" alt="wood"> 60</span>
@@ -109,7 +128,7 @@
                             </div>
                         </button>
                         <button class="shop-item" data-item="house_4" data-cost-gold="400" data-cost-wood="100" data-cost-brick="50" data-capacity="15">
-                             <span class="item-name">House 4 (+15 capacity)</span>
+                             <span class="item-name" data-translate-key="shop_house4_name">Дом 4 (+15 мест)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 400</span>
                                 <span class="cost-resource"><img src="images/tree/tree.png" alt="wood"> 100</span>
@@ -120,46 +139,88 @@
                 </div>
 
                 <div class="shop-section">
-                    <h2>Upgrades</h2>
+                    <h2 data-translate-key="shop_upgrades_title">Улучшения</h2>
                     <div class="shop-items">
-                        <button class="shop-item" id="upgrade-scissors-button" data-item="upgrade_scissors" data-cost-gold="150">
-                            <span class="item-name">Upgrade Scissors (Lvl 2)</span>
+                        <button class="shop-item" id="upgrade-sheep-button" data-item="upgrade_sheep">
+                            <span class="item-name">Улучшить Овцу (Ур. 2)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 150</span>
                             </div>
                         </button>
-                    </div>
-                </div>
-
-                <div class="shop-section">
-                    <h2>Buy</h2>
-                    <div class="shop-items">
-                         <button class="shop-item" data-item="buy_hammer" data-cost-gold="75">
-                            <span class="item-name">Buy Repair Hammer</span>
+                         <button class="shop-item" id="upgrade-cow-button" data-item="upgrade_cow">
+                            <span class="item-name">Улучшить Корову (Ур. 2)</span>
                             <div class="item-cost">
-                                <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 75</span>
+                                <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 250</span>
                             </div>
                         </button>
-                        <button class="shop-item" id="buy-sheep-button" data-item="buy_sheep" data-cost-gold="50">
-                            <span class="item-name">Buy Sheep</span>
+                        <button class="shop-item" id="upgrade-chicken-button" data-item="upgrade_chicken">
+                            <span class="item-name">Улучшить Курицу (Ур. 2)</span>
+                            <div class="item-cost">
+                                <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 100</span>
+                            </div>
+                        </button>
+                        <button class="shop-item hidden" id="upgrade-autofarm-button" data-item="upgrade_autofarm">
+                            <span class="item-name">Авто-Фарм (Ур. 2)</span>
+                            <div class="item-cost">
+                                <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 100</span>
+                            </div>
+                        </button>
+                        <button class="shop-item hidden" id="upgrade-clickfarm-button" data-item="upgrade_clickfarm">
+                            <span class="item-name">Клик-Фарм (Ур. 2)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 50</span>
                             </div>
                         </button>
-                        <button class="shop-item" id="buy-chicken-button" data-item="buy_chicken" data-cost-gold="25">
-                            <span class="item-name">Buy Chicken</span>
+                    </div>
+                </div>
+
+                <div class="shop-section">
+                    <h2 data-translate-key="shop_buy_title">Купить</h2>
+                    <div class="shop-items">
+                         <button class="shop-item" data-item="buy_hammer" data-cost-gold="75">
+                            <span class="item-name" data-translate-key="shop_buy_hammer">Купить Молот</span>
+                            <div class="item-cost">
+                                <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 75</span>
+                            </div>
+                        </button>
+                        <button class="shop-item" id="buy-cow-button" data-item="buy_cow">
+                            <span class="item-name" data-translate-key="shop_buy_cow">Купить Корову</span>
+                            <div class="item-cost">
+                                <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 200</span>
+                            </div>
+                        </button>
+                        <button class="shop-item" id="buy-sheep-button" data-item="buy_sheep">
+                            <span class="item-name" data-translate-key="shop_buy_sheep">Купить Овцу</span>
+                            <div class="item-cost">
+                                <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 50</span>
+                            </div>
+                        </button>
+                        <button class="shop-item" id="buy-chicken-button" data-item="buy_chicken">
+                            <span class="item-name" data-translate-key="shop_buy_chicken">Купить Курицу</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 25</span>
                             </div>
                         </button>
-                        <button class="shop-item" data-item="wood" data-cost-gold="10">
-                            <span class="item-name">Buy Wood</span>
+                        <button class="shop-item" data-item="buy_grass_seed" data-cost-gold="10">
+                            <span class="item-name" data-translate-key="shop_buy_grass_seed">Семена травы (x10)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 10</span>
                             </div>
                         </button>
-                        <button class="shop-item" data-item="brick" data-cost-gold="25">
-                            <span class="item-name">Buy Brick</span>
+                         <button class="shop-item" data-item="buy_hay_seed" data-cost-gold="20">
+                            <span class="item-name" data-translate-key="shop_buy_hay_seed">Семена сена (x10)</span>
+                            <div class="item-cost">
+                                <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 20</span>
+                            </div>
+                        </button>
+                        <button class="shop-item" data-item="buy_wood" data-cost-gold="10">
+                            <span class="item-name" data-translate-key="shop_buy_wood">Купить Дерево</span>
+                            <div class="item-cost">
+                                <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 10</span>
+                            </div>
+                        </button>
+                        <button class="shop-item" data-item="buy_brick" data-cost-gold="25">
+                            <span class="item-name" data-translate-key="shop_buy_brick">Купить Кирпич</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 25</span>
                             </div>
@@ -168,45 +229,72 @@
                 </div>
 
                 <div class="shop-section">
-                    <h2>Sell</h2>
+                    <h2 data-translate-key="shop_sell_title">Продать</h2>
                     <div class="shop-items">
+                        <button class="shop-item" data-item="sell_milk" data-value-gold="15">
+                            <span class="item-name" data-translate-key="shop_sell_milk">Продать Молоко</span>
+                            <div class="item-cost">
+                                <span class="cost-resource">+<img src="images/gold/gold.png" alt="gold"> 15</span>
+                            </div>
+                        </button>
                         <button class="shop-item" data-item="sell_wool" data-value-gold="7">
-                            <span class="item-name">Sell Wool</span>
+                            <span class="item-name" data-translate-key="shop_sell_wool">Продать Шерсть</span>
                             <div class="item-cost">
                                 <span class="cost-resource">+<img src="images/gold/gold.png" alt="gold"> 7</span>
                             </div>
                         </button>
                         <button class="shop-item" data-item="sell_skin" data-value-gold="10">
-                            <span class="item-name">Sell Skin</span>
+                            <span class="item-name" data-translate-key="shop_sell_skin">Продать Шкуру</span>
                             <div class="item-cost">
                                 <span class="cost-resource">+<img src="images/gold/gold.png" alt="gold"> 10</span>
                             </div>
                         </button>
                         <button class="shop-item" data-item="sell_egg" data-value-gold="3">
-                            <span class="item-name">Sell Egg</span>
+                            <span class="item-name" data-translate-key="shop_sell_egg">Продать Яйцо</span>
                             <div class="item-cost">
                                 <span class="cost-resource">+<img src="images/gold/gold.png" alt="gold"> 3</span>
                             </div>
                         </button>
                         <button class="shop-item sell-all-button" data-item="sell_all">
-                            <span class="item-name">Sell All</span>
+                            <span class="item-name" data-translate-key="shop_sell_all">Продать Всё</span>
                         </button>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <!-- ОКНО НАСТРОЕК -->
+        <div id="settings-menu" class="hidden">
+             <div class="settings-content">
+                <h2 data-translate-key="settings_title">Настройки</h2>
+                <div class="setting-row">
+                    <span data-translate-key="settings_sound">Звук</span>
+                    <button class="settings-toggle" id="sound-toggle-button" data-setting="sound">ВКЛ</button>
+                </div>
+                <div class="setting-row">
+                    <span data-translate-key="settings_music">Музыка</span>
+                    <button class="settings-toggle" id="music-toggle-button" data-setting="music">ВКЛ</button>
+                </div>
+                <div class="setting-row">
+                    <span data-translate-key="settings_language">Язык</span>
+                    <button class="settings-toggle" id="language-toggle-button" data-setting="language">RUS</button>
+                </div>
+                <button id="close-settings-button" data-translate-key="settings_close">Закрыть</button>
+            </div>
+        </div>
 
         <div id="game-over-screen" class="hidden">
             <div class="game-over-box">
-                <h1>GAME OVER</h1>
-                <p>All your animals have been stolen!</p>
-                <button id="restart-button">Restart</button>
+                <h1 data-translate-key="game_over_title">ИГРА ОКОНЧЕНА</h1>
+                <p data-translate-key="game_over_subtitle">Всех ваших животных украли!</p>
+                <button id="restart-button" data-translate-key="game_over_restart">Начать заново</button>
             </div>
         </div>
 
     </div>
 
     <!-- Аудиофайлы -->
+    <audio id="background-melody" src="sound/fon.mp3" loop></audio>
     <audio id="day-sound" src="sound/day_sound.mp3" loop></audio>
     <audio id="night-song" src="sound/night_song.mp3" loop></audio>
     <audio id="sheep-sound" src="sound/sheep_sound.mp3"></audio>
@@ -216,8 +304,11 @@
     <audio id="wolf-dead-sound" src="sound/wolf_dead.mp3"></audio>
     <audio id="chicken-sound" src="sound/chicken.mp3"></audio>
     <audio id="chicken-ambient-sound" src="sound/chicken_1.mp3"></audio>
+    <audio id="cow-ambient-sound" src="sound/cow.mp3"></audio>
+
 
     <script src="js/classes.js"></script>
     <script src="js/script.js"></script>
 </body>
 </html>
+

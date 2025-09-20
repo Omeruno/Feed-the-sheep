@@ -66,7 +66,7 @@ html, body {
     filter: brightness(0.6);
 }
 
-.sheep, .wolf, .wool-item, .skin-item, .house, .hunger-icon, .hp-bar-container, .chicken, .egg-item {
+.sheep, .wolf, .wool-item, .skin-item, .house, .hp-bar-container, .chicken, .egg-item, .cow, .milk-item, .flying-coin {
     position: absolute;
     transition: opacity 0.5s linear, filter 0.1s linear;
     z-index: 2;
@@ -74,27 +74,54 @@ html, body {
     object-fit: contain; 
 }
 
-.sheep { width: 29px; height: 29px; }
-.chicken { width: 21px; height: 21px; }
-.wolf { width: 56px; height: 56px; z-index: 3; cursor: pointer; }
+#grass-layer {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
 
-.wool-item, .skin-item, .egg-item { 
+.grass-patch, .hay-patch {
+    position: absolute;
+    transition: opacity 0.5s ease-in-out, transform 0.3s ease-out;
+    pointer-events: none;
+    visibility: visible;
+}
+
+.grass-patch { width: 25px; height: auto; }
+.hay-patch { width: 20px; height: auto; }
+
+
+.sheep { width: 33px; height: 33px; }
+.chicken { width: 27px; height: 27px; }
+.cow { width: 48px; height: 48px; }
+.wolf { width: 64px; height: 64px; z-index: 3; cursor: pointer; }
+
+.wool-item, .skin-item, .egg-item, .milk-item, .flying-coin { 
     width: 20px; 
     height: auto; 
-    z-index: 4; 
+    z-index: 99; 
     pointer-events: none; 
     transition: transform 1s ease-in, opacity 1s ease-in;
 }
-.house { width: 100px; height: auto; z-index: 2; pointer-events: none; }
-.house.taking-damage {
-    filter: brightness(1.5) sepia(1) hue-rotate(-20deg) saturate(5);
+.milk-item {
+    width: 15px; 
 }
 
-.hunger-icon {
-    width: 12px;
-    height: 12px;
-    z-index: 3;
-    pointer-events: none;
+.house { 
+    width: 100px; 
+    height: auto; 
+    z-index: 5;
+    pointer-events: auto; 
+    cursor: pointer;
+    transition: transform 0.1s ease-out;
+}
+.house.clicked {
+    transform: scale(1.05);
+}
+
+.house.taking-damage {
+    filter: brightness(1.5) sepia(1) hue-rotate(-20deg) saturate(5);
 }
 
 .hp-bar-container {
@@ -114,22 +141,6 @@ html, body {
     transition: width 0.2s linear;
 }
 
-
-#grass-layer {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none;
-    z-index: 1;
-}
-
-.grass-patch {
-    position: absolute;
-    width: 25px;
-    height: auto;
-    transition: opacity 0.5s ease-in-out;
-    pointer-events: none;
-}
-
 #ui-layer {
     position: absolute;
     width: 360px;
@@ -141,15 +152,21 @@ html, body {
     touch-action: none;
 }
 
-#resources-panel-container {
+#top-left-ui {
     position: absolute;
     top: 15px;
     left: 15px;
     display: flex;
+    align-items: flex-start;
+    gap: 8px; 
+    pointer-events: auto;
+}
+
+#resources-panel-container {
+    display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
-    pointer-events: auto;
 }
 
 #resources-container {
@@ -165,12 +182,13 @@ html, body {
 
 #resources-panel-container.open #resources-container {
     transform: scaleY(1);
-    height: 200px; /* Примерная высота, можно подобрать точнее */
+    height: 240px;
 }
 
 #resources-toggle-button {
     width: 38px;
     height: 38px;
+    background-image: url('../images/icons/calculator_icon.png');
     background-size: 60%;
     background-position: center;
     background-repeat: no-repeat;
@@ -218,6 +236,10 @@ html, body {
 .resource-counter img {
     width: 22px;
     margin-right: 6px;
+    object-fit: contain;
+}
+#milk-counter img {
+    width: 16px; 
 }
 
 #main-actions-container {
@@ -228,6 +250,7 @@ html, body {
     align-items: center;
     gap: 10px;
     pointer-events: auto;
+    z-index: 11;
 }
 
 #action-buttons-panel {
@@ -256,6 +279,7 @@ html, body {
     transition: transform 0.3s ease-in-out;
     width: 38px;
     height: 38px;
+    background-image: url('../images/icons/inventory_icon.png');
 }
 
 #main-actions-container.open #menu-toggle-button {
@@ -266,6 +290,13 @@ html, body {
     width: 50px;
     height: 32px;
     background-image: url('../images/shop/shop.png');
+}
+
+#settings-button {
+    width: 38px;
+    height: 38px;
+    background-image: url('../images/icons/settings.png');
+    pointer-events: auto;
 }
 
 .tool-button.active {
@@ -292,7 +323,7 @@ html, body {
     pointer-events: auto;
 }
 
-#shop-menu.hidden, #game-over-screen.hidden {
+#shop-menu.hidden, #game-over-screen.hidden, #settings-menu.hidden, #grandfather-dialogue.hidden {
     display: none;
     pointer-events: none;
 }
@@ -383,7 +414,7 @@ html, body {
     background-color: #ff4d4d !important;
 }
 
-.item-name { font-size: 12px; }
+.item-name { font-size: 12px; text-align: center;}
 .item-cost { display: flex; gap: 10px; justify-content: center; align-items: center; }
 .cost-resource { display: flex; align-items: center; font-size: 10px; }
 .cost-resource img { width: 14px; height: 14px; margin-right: 3px; }
@@ -484,3 +515,139 @@ html, body {
     border-radius: 6px;
     transition: width 0.3s ease-in-out;
 }
+
+/* --- СТИЛИ НАСТРОЕК --- */
+#settings-menu {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 40;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.8);
+    pointer-events: auto;
+}
+
+.settings-content {
+    background-color: #e7a977;
+    border: 3px solid #4a2d14;
+    border-radius: 10px;
+    padding: 20px;
+    width: 280px;
+    font-family: 'Press Start 2P', cursive;
+    color: #4a2d14;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.settings-content h2 {
+    font-size: 18px;
+    text-align: center;
+    margin: 0 0 10px 0;
+}
+
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+
+.settings-toggle {
+    background-color: #c58654;
+    border: 2px solid #4a2d14;
+    border-radius: 5px;
+    padding: 5px 10px;
+    font-family: 'Press Start 2P', cursive;
+    color: #4a2d14;
+    cursor: pointer;
+    width: 80px;
+    text-align: center;
+}
+
+#close-settings-button {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #a56a43;
+    color: white;
+    border: 2px solid #4a2d14;
+    border-radius: 5px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+/* --- ДИАЛОГ С ДЕДОМ --- */
+#grandfather-dialogue {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 101;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    pointer-events: auto;
+}
+
+.dialogue-box {
+    width: 90%;
+    max-width: 340px;
+    background-color: #e7a977;
+    border: 4px solid #4a2d14;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    padding: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
+
+.character-image {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin-right: 10px;
+    align-self: flex-start;
+}
+
+.text-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#dialogue-text {
+    font-family: 'Press Start 2P', cursive;
+    color: #4a2d14;
+    font-size: 10px;
+    line-height: 1.5;
+    margin: 0 0 10px 0;
+    flex-grow: 1;
+    white-space: pre-wrap;
+}
+
+#dialogue-text::after {
+    content: '|';
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    from, to { color: transparent; }
+    50% { color: #4a2d14; }
+}
+
+#dialogue-continue {
+    align-self: flex-end;
+    padding: 5px 10px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 10px;
+    background-color: #a56a43;
+    color: white;
+    border: 2px solid #4a2d14;
+    border-radius: 5px;
+    cursor: pointer;
+}
+

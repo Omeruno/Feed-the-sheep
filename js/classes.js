@@ -31,7 +31,7 @@ class Cloud {
 }
 
 class House {
-    constructor(type, capacity) {
+    constructor(type, capacity, initialAutoFarmLevel = 1, initialClickFarmLevel = 1) {
         this.element = document.createElement('img');
         this.element.className = 'house';
         this.element.src = HOUSE_SPRITES[type];
@@ -40,6 +40,8 @@ class House {
         const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
         this.y = walkableTop + (GAME_DIMENSIONS.height - walkableTop) / 2 - 50;
         
+        this.layerThreshold = this.y + 60; 
+
         this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
         this.element.style.visibility = 'visible';
         gameWorld.appendChild(this.element);
@@ -55,6 +57,26 @@ class House {
         this.hpBarContainer.appendChild(this.hpBar);
         gameWorld.appendChild(this.hpBarContainer);
         this.updateHpBar();
+
+        this.autoFarmLevel = initialAutoFarmLevel;
+        this.clickFarmLevel = initialClickFarmLevel;
+        this.updateFarmRates();
+
+        this.element.addEventListener('pointerdown', () => this.handleClick());
+    }
+    
+    updateFarmRates() {
+        this.autoFarmRate = 0.1 * this.autoFarmLevel;
+        this.clickFarmValue = 0.2 * this.clickFarmLevel;
+    }
+
+    handleClick() {
+        if(isPaused) return;
+        goldCount += this.clickFarmValue;
+        updateResourceCounters();
+        this.element.classList.add('clicked');
+        setTimeout(() => this.element.classList.remove('clicked'), 100);
+        spawnFlyingCoin(this.x + 50, this.y + 20);
     }
 
     updateHpBar() {
@@ -68,7 +90,6 @@ class House {
         this.updateHpBar();
         this.element.classList.add('taking-damage');
         setTimeout(() => this.element.classList.remove('taking-damage'), 100);
-
         if (this.health <= 0) {
             this.destroy();
         }
@@ -84,26 +105,22 @@ class House {
         this.hpBarContainer.remove();
         currentHouse = null;
         maxAnimals = BASE_ANIMAL_CAPACITY;
-        [...sheep, ...chickens].forEach(animal => {
+        [...sheep, ...chickens, ...cows].forEach(animal => {
             animal.isHiding = false;
             animal.element.style.visibility = 'visible';
         });
+        updateShopUI();
     }
 }
 
-
 class Sheep {
     constructor() {
-        this.element = document.createElement('img'); this.element.className = 'sheep'; this.element.src = sheepSprites.front;
-        gameWorld.appendChild(this.element); 
-        
-        this.hungerIcon = document.createElement('img');
-        this.hungerIcon.className = 'hunger-icon';
-        this.hungerIcon.src = HUNGER_ICON_SRC;
-        gameWorld.appendChild(this.hungerIcon);
+        this.element = document.createElement('img');
+        this.element.className = 'sheep';
+        this.element.src = sheepSprites.front;
+        gameWorld.appendChild(this.element);
 
-        let startX, startY, attempts = 0;
-        
+        let startX, startY;
         const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
         const greenFieldHeight = GAME_DIMENSIONS.height - walkableTop;
         const horizontalMargin = GAME_DIMENSIONS.width * 0.20;
@@ -114,27 +131,23 @@ class Sheep {
         const minY = walkableTop + verticalMargin;
         const maxY = GAME_DIMENSIONS.height - verticalMargin;
 
-        do { 
-            startX = minX + Math.random() * (maxX - minX);
-            startY = minY + Math.random() * (maxY - minY);
-            attempts++; 
-            if (attempts > 50) break; 
-        } while (isPointBlocked(startX, startY));
+        startX = minX + Math.random() * (maxX - minX);
+        startY = minY + Math.random() * (maxY - minY);
 
-        this.x = startX; this.y = startY; this.element.style.transform = `translate(${this.x}px, ${this.y}px)`; this.element.style.visibility = 'visible';
-        this.targetX = this.x; this.targetY = this.y; this.isWaiting = true; this.isEating = false; this.isSheared = false; this.isScared = false; this.isHiding = false; this.isHungry = false;
+        this.x = startX; this.y = startY;
+        this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+        this.element.style.visibility = 'visible';
+        
+        this.targetX = this.x; this.targetY = this.y;
+        this.isWaiting = true; this.isEating = false; this.isScared = false; this.isHiding = false;
+        
         this.waitTimer = setTimeout(() => this.decideNextAction(), Math.random() * MAX_WAIT_TIME);
-        this.element.addEventListener('pointerdown', (e) => { e.stopPropagation(); this.tryShear(); });
     }
 
     decideNextAction() {
         this.isWaiting = false;
         clearTimeout(this.waitTimer);
-        let foundGrass = false;
-        if (this.isHungry) {
-            foundGrass = this.findNearestGrass();
-        }
-        
+        let foundGrass = this.findNearestGrass();
         if (!foundGrass) {
             this.findNewTarget();
         }
@@ -142,20 +155,15 @@ class Sheep {
 
     findNearestGrass() {
         if (grassPatches.length === 0) return false;
-
         let closestGrass = null;
         let minDistance = Infinity;
-
         grassPatches.forEach(grass => {
-            const dx = this.x - grass.x;
-            const dy = this.y - grass.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            const distance = Math.sqrt(Math.pow(this.x - grass.x, 2) + Math.pow(this.y - grass.y, 2));
             if (distance < minDistance) {
                 minDistance = distance;
                 closestGrass = grass;
             }
         });
-
         if (closestGrass) {
             this.targetX = closestGrass.x;
             this.targetY = closestGrass.y;
@@ -166,72 +174,47 @@ class Sheep {
 
     findNewTarget() {
         if (this.isHiding) return;
-        let newTargetX, newTargetY, attempts = 0;
-        
         const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
         const greenFieldHeight = GAME_DIMENSIONS.height - walkableTop;
         const horizontalMargin = GAME_DIMENSIONS.width * 0.20;
         const verticalMargin = greenFieldHeight * 0.20;
-
-        const minX = horizontalMargin;
-        const maxX = GAME_DIMENSIONS.width - horizontalMargin;
-        const minY = walkableTop + verticalMargin;
-        const maxY = GAME_DIMENSIONS.height - verticalMargin;
-
-        do { 
-            newTargetX = minX + Math.random() * (maxX - minX);
-            newTargetY = minY + Math.random() * (maxY - minY);
-            attempts++; 
-            if (attempts > 50) break; 
-        } while (isPointBlocked(newTargetX, newTargetY));
-
-        this.targetX = newTargetX; this.targetY = newTargetY;
+        this.targetX = (horizontalMargin) + Math.random() * (GAME_DIMENSIONS.width - 2 * horizontalMargin);
+        this.targetY = (walkableTop + verticalMargin) + Math.random() * (greenFieldHeight - 2 * verticalMargin);
     }
 
     update(deltaTime) {
+        if (currentHouse) {
+            this.element.style.zIndex = this.y > currentHouse.layerThreshold ? '6' : '4';
+        }
+
         if (this.isHiding || this.isEating || this.isScared) return;
 
-        const isNight = currentStageIndex >= 3;
+        const isNight = currentStageIndex === 4; 
         if (isNight && currentHouse) {
             this.targetX = currentHouse.x + 25;
             this.targetY = currentHouse.y + 50;
-            const dx_h = this.targetX - this.x;
-            const dy_h = this.targetY - this.y;
-            const distance_h = Math.sqrt(dx_h * dx_h + dy_h * dy_h);
-            if (distance_h < 10) {
+            const distanceToHouse = Math.sqrt(Math.pow(this.targetX - this.x, 2) + Math.pow(this.targetY - this.y, 2));
+            if (distanceToHouse < 10) {
                 this.isHiding = true;
                 this.element.style.visibility = 'hidden';
-                this.hungerIcon.style.visibility = 'hidden';
                 return;
             }
         }
-
-        const currentSprites = this.isSheared ? baldSheepSprites : sheepSprites;
 
         for (let i = grassPatches.length - 1; i >= 0; i--) {
             const grass = grassPatches[i];
             const distanceToGrass = Math.sqrt(Math.pow(this.x - grass.x, 2) + Math.pow(this.y - grass.y, 2));
             if (distanceToGrass < EAT_RADIUS) {
                 this.isEating = true;
-                this.element.src = currentSprites.eat;
+                this.element.src = sheepSprites.eat;
                 playSound(eatSound);
                 setTimeout(() => {
-                    grass.element.src = 'images/ground/ground.png';
+                    grass.element.remove();
                     grassPatches.splice(i, 1);
-                    this.element.src = currentSprites.front;
+                    this.element.src = sheepSprites.front;
                     this.isEating = false;
-                    if (this.isHungry) {
-                        this.isSheared = false;
-                        this.isHungry = false;
-                        this.hungerIcon.style.visibility = 'hidden';
-                    }
+                    spawnWool(this.x, this.y, woolPerSheep);
                     this.decideNextAction();
-                    
-                    setTimeout(() => {
-                        grass.element.style.transition = 'opacity 0.5s';
-                        grass.element.style.opacity = 0;
-                        setTimeout(() => grass.element.remove(), 500);
-                    }, GRASS_DISAPPEAR_TIME);
                 }, EAT_ANIMATION_DURATION);
                 return;
             }
@@ -244,37 +227,20 @@ class Sheep {
         if (distanceToTarget < 1) {
             if (!this.isWaiting) {
                 this.isWaiting = true;
-                this.waitTimer = setTimeout(() => {
-                    this.isWaiting = false;
-                    this.decideNextAction();
-                }, MIN_WAIT_TIME + Math.random() * (MAX_WAIT_TIME - MIN_WAIT_TIME));
+                this.element.src = sheepSprites.front;
+                this.waitTimer = setTimeout(() => this.decideNextAction(), MIN_WAIT_TIME + Math.random() * (MAX_WAIT_TIME - MIN_WAIT_TIME));
             }
         } else {
             const moveX = (dx / distanceToTarget) * SHEEP_SPEED * deltaTime;
             const moveY = (dy / distanceToTarget) * SHEEP_SPEED * deltaTime;
             this.x += moveX;
             this.y += moveY;
-            if (Math.abs(dx) > Math.abs(dy)) {
-                this.element.src = dx > 0 ? currentSprites.right : currentSprites.left;
-            } else {
-                this.element.src = dy > 0 ? currentSprites.front : currentSprites.back;
-            }
+            this.element.src = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? sheepSprites.right : sheepSprites.left) : (dy > 0 ? sheepSprites.front : sheepSprites.back);
             this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
-        }
-
-        this.hungerIcon.style.transform = `translate(${this.x + 3}px, ${this.y - 14}px)`;
-    }
-
-    tryShear() {
-        if (currentTool === 'scissors' && !this.isSheared) {
-            this.isSheared = true;
-            this.isHungry = true;
-            this.hungerIcon.style.visibility = 'visible';
-            spawnWool(this.x, this.y, woolPerShear);
-            this.decideNextAction();
         }
     }
 }
+
 
 class Chicken {
     constructor() {
@@ -283,78 +249,77 @@ class Chicken {
         this.element.src = chickenSprites.front;
         gameWorld.appendChild(this.element);
 
-        let startX, startY, attempts = 0;
-        
+        let startX, startY;
         const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
         const greenFieldHeight = GAME_DIMENSIONS.height - walkableTop;
         const horizontalMargin = GAME_DIMENSIONS.width * 0.20;
         const verticalMargin = greenFieldHeight * 0.20;
+        startX = horizontalMargin + Math.random() * (GAME_DIMENSIONS.width - 2 * horizontalMargin);
+        startY = (walkableTop + verticalMargin) + Math.random() * (greenFieldHeight - 2 * verticalMargin);
 
-        const minX = horizontalMargin;
-        const maxX = GAME_DIMENSIONS.width - horizontalMargin;
-        const minY = walkableTop + verticalMargin;
-        const maxY = GAME_DIMENSIONS.height - verticalMargin;
-
-        do { 
-            startX = minX + Math.random() * (maxX - minX);
-            startY = minY + Math.random() * (maxY - minY);
-            attempts++; 
-            if (attempts > 50) break; 
-        } while (isPointBlocked(startX, startY));
-
-        this.x = startX; this.y = startY; this.element.style.transform = `translate(${this.x}px, ${this.y}px)`; this.element.style.visibility = 'visible';
-        this.targetX = this.x; this.targetY = this.y; this.isWaiting = true; this.isEating = false; this.isScared = false; this.isHiding = false;
+        this.x = startX; this.y = startY;
+        this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+        this.element.style.visibility = 'visible';
+        
+        this.targetX = this.x; this.targetY = this.y;
+        this.isWaiting = true; this.isEating = false; this.isScared = false; this.isHiding = false;
+        
         this.waitTimer = setTimeout(() => this.decideNextAction(), Math.random() * MAX_WAIT_TIME);
     }
 
     decideNextAction() {
         this.isWaiting = false;
         clearTimeout(this.waitTimer);
-        this.findNewTarget();
+        if (Math.random() < 0.3) {
+            this.peck();
+        } else {
+            this.findNewTarget();
+        }
+    }
+
+    peck() {
+        this.isEating = true; 
+        this.element.src = chickenSprites.eat;
+        setTimeout(() => { this.element.src = chickenSprites.front; }, 150);
+        setTimeout(() => { this.element.src = chickenSprites.eat; }, 300);
+        setTimeout(() => { this.element.src = chickenSprites.front; }, 450);
+        setTimeout(() => {
+            this.isEating = false;
+            this.element.src = chickenSprites.front;
+            this.findNewTarget();
+        }, 600);
     }
 
     findNewTarget() {
         if (this.isHiding) return;
-        let newTargetX, newTargetY, attempts = 0;
-        
         const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
         const greenFieldHeight = GAME_DIMENSIONS.height - walkableTop;
         const horizontalMargin = GAME_DIMENSIONS.width * 0.20;
         const verticalMargin = greenFieldHeight * 0.20;
-
-        const minX = horizontalMargin;
-        const maxX = GAME_DIMENSIONS.width - horizontalMargin;
-        const minY = walkableTop + verticalMargin;
-        const maxY = GAME_DIMENSIONS.height - verticalMargin;
-
-        do { 
-            newTargetX = minX + Math.random() * (maxX - minX);
-            newTargetY = minY + Math.random() * (maxY - minY);
-            attempts++; 
-            if (attempts > 50) break; 
-        } while (isPointBlocked(newTargetX, newTargetY));
-
-        this.targetX = newTargetX; this.targetY = newTargetY;
+        this.targetX = (horizontalMargin) + Math.random() * (GAME_DIMENSIONS.width - 2 * horizontalMargin);
+        this.targetY = (walkableTop + verticalMargin) + Math.random() * (greenFieldHeight - 2 * verticalMargin);
     }
 
     update(deltaTime) {
+         if (currentHouse) {
+            this.element.style.zIndex = this.y > currentHouse.layerThreshold ? '6' : '4';
+        }
+
         if (this.isHiding || this.isEating || this.isScared) return;
 
-        const isNight = currentStageIndex >= 3;
+        const isNight = currentStageIndex === 4; 
         if (isNight && currentHouse) {
             this.targetX = currentHouse.x + 25;
             this.targetY = currentHouse.y + 50;
-            const dx_h = this.targetX - this.x;
-            const dy_h = this.targetY - this.y;
-            const distance_h = Math.sqrt(dx_h * dx_h + dy_h * dy_h);
-            if (distance_h < 10) {
+            const distanceToHouse = Math.sqrt(Math.pow(this.targetX - this.x, 2) + Math.pow(this.targetY - this.y, 2));
+            if (distanceToHouse < 10) {
                 this.isHiding = true;
                 this.element.style.visibility = 'hidden';
                 return;
             }
         }
 
-        if (Math.random() < CHICKEN_EGG_CHANCE * deltaTime) {
+        if (Math.random() < eggChance * deltaTime) {
             spawnEgg(this.x, this.y);
         }
         
@@ -365,25 +330,142 @@ class Chicken {
         if (distanceToTarget < 1) {
             if (!this.isWaiting) {
                 this.isWaiting = true;
-                this.waitTimer = setTimeout(() => {
-                    this.isWaiting = false;
-                    this.decideNextAction();
-                }, MIN_WAIT_TIME + Math.random() * (MAX_WAIT_TIME - MIN_WAIT_TIME));
+                this.element.src = chickenSprites.front;
+                this.waitTimer = setTimeout(() => this.decideNextAction(), MIN_WAIT_TIME + Math.random() * (MAX_WAIT_TIME - MIN_WAIT_TIME));
             }
         } else {
             const moveX = (dx / distanceToTarget) * CHICKEN_SPEED * deltaTime;
             const moveY = (dy / distanceToTarget) * CHICKEN_SPEED * deltaTime;
             this.x += moveX;
             this.y += moveY;
-            if (Math.abs(dx) > Math.abs(dy)) {
-                this.element.src = dx > 0 ? chickenSprites.right : chickenSprites.left;
-            } else {
-                this.element.src = dy > 0 ? chickenSprites.front : chickenSprites.back;
-            }
+            this.element.src = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? chickenSprites.right : chickenSprites.left) : (dy > 0 ? chickenSprites.front : chickenSprites.back);
             this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
         }
     }
 }
+
+class Cow {
+    constructor() {
+        this.element = document.createElement('img'); this.element.className = 'cow'; this.element.src = cowSprites.front;
+        gameWorld.appendChild(this.element); 
+        
+        let startX, startY;
+        const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
+        const greenFieldHeight = GAME_DIMENSIONS.height - walkableTop;
+        const horizontalMargin = GAME_DIMENSIONS.width * 0.20;
+        const verticalMargin = greenFieldHeight * 0.20;
+        startX = horizontalMargin + Math.random() * (GAME_DIMENSIONS.width - 2 * horizontalMargin);
+        startY = (walkableTop + verticalMargin) + Math.random() * (greenFieldHeight - 2 * verticalMargin);
+
+        this.x = startX; this.y = startY;
+        this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+        this.element.style.visibility = 'visible';
+        
+        this.targetX = this.x; this.targetY = this.y;
+        this.isWaiting = true; this.isEating = false; this.isScared = false; this.isHiding = false;
+        
+        this.waitTimer = setTimeout(() => this.decideNextAction(), Math.random() * MAX_WAIT_TIME);
+    }
+
+    decideNextAction() {
+        this.isWaiting = false;
+        clearTimeout(this.waitTimer);
+        let foundHay = this.findNearestHay();
+        if (!foundHay) {
+            this.findNewTarget();
+        }
+    }
+
+    findNearestHay() {
+        const readyHay = hayPatches.filter(h => h.isReady);
+        if (readyHay.length === 0) return false;
+        let closestHay = null;
+        let minDistance = Infinity;
+        readyHay.forEach(hay => {
+            const distance = Math.sqrt(Math.pow(this.x - hay.x, 2) + Math.pow(this.y - hay.y, 2));
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestHay = hay;
+            }
+        });
+        if (closestHay) {
+            this.targetX = closestHay.x;
+            this.targetY = closestHay.y;
+            return true;
+        }
+        return false;
+    }
+
+    findNewTarget() {
+        if (this.isHiding) return;
+        const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
+        const greenFieldHeight = GAME_DIMENSIONS.height - walkableTop;
+        const horizontalMargin = GAME_DIMENSIONS.width * 0.20;
+        const verticalMargin = greenFieldHeight * 0.20;
+        this.targetX = (horizontalMargin) + Math.random() * (GAME_DIMENSIONS.width - 2 * horizontalMargin);
+        this.targetY = (walkableTop + verticalMargin) + Math.random() * (greenFieldHeight - 2 * verticalMargin);
+    }
+
+    update(deltaTime) {
+        if (currentHouse) {
+            this.element.style.zIndex = this.y > currentHouse.layerThreshold ? '6' : '4';
+        }
+
+        if (this.isHiding || this.isEating || this.isScared) return;
+
+        const isNight = currentStageIndex === 4;
+        if (isNight && currentHouse) {
+            this.targetX = currentHouse.x + 25;
+            this.targetY = currentHouse.y + 50;
+            const distanceToHouse = Math.sqrt(Math.pow(this.targetX - this.x, 2) + Math.pow(this.targetY - this.y, 2));
+            if (distanceToHouse < 10) {
+                this.isHiding = true;
+                this.element.style.visibility = 'hidden';
+                return;
+            }
+        }
+
+        for (let i = hayPatches.length - 1; i >= 0; i--) {
+            const hay = hayPatches[i];
+            if (!hay.isReady) continue;
+            const distanceToHay = Math.sqrt(Math.pow(this.x - hay.x, 2) + Math.pow(this.y - hay.y, 2));
+            if (distanceToHay < EAT_RADIUS) {
+                this.isEating = true;
+                this.element.src = cowSprites.eat;
+                playSound(eatSound);
+                setTimeout(() => {
+                    hay.destroy();
+                    hayPatches.splice(i, 1);
+                    this.element.src = cowSprites.front;
+                    this.isEating = false;
+                    spawnMilk(this.x, this.y);
+                    this.decideNextAction();
+                }, EAT_ANIMATION_DURATION);
+                return;
+            }
+        }
+        
+        const dx = this.targetX - this.x;
+        const dy = this.targetY - this.y;
+        const distanceToTarget = Math.sqrt(dx * dx + dy * dy);
+
+        if (distanceToTarget < 1) {
+            if (!this.isWaiting) {
+                this.isWaiting = true;
+                this.element.src = cowSprites.front;
+                this.waitTimer = setTimeout(() => this.decideNextAction(), MIN_WAIT_TIME + Math.random() * (MAX_WAIT_TIME - MIN_WAIT_TIME));
+            }
+        } else {
+            const moveX = (dx / distanceToTarget) * COW_SPEED * deltaTime;
+            const moveY = (dy / distanceToTarget) * COW_SPEED * deltaTime;
+            this.x += moveX;
+            this.y += moveY;
+            this.element.src = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? cowSprites.right : cowSprites.left) : (dy > 0 ? cowSprites.front : cowSprites.back);
+            this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+        }
+    }
+}
+
 
 class Wolf {
     constructor() {
@@ -408,13 +490,17 @@ class Wolf {
     }
 
     findTarget() {
-        const availableAnimals = [...sheep, ...chickens].filter(a => !a.isScared && !a.isHiding);
+        const availableAnimals = [...sheep, ...chickens, ...cows].filter(a => !a.isScared && !a.isHiding);
         return availableAnimals.length > 0 ? availableAnimals[Math.floor(Math.random() * availableAnimals.length)] : null;
     }
 
     update(deltaTime) {
-        const isNight = currentStageIndex >= 3;
-        if (isNight && currentHouse && [...sheep, ...chickens].some(a => a.isHiding)) {
+        if (currentHouse) {
+            this.element.style.zIndex = this.y > currentHouse.layerThreshold ? '6' : '4';
+        }
+
+        const isNight = currentStageIndex === 4;
+        if (isNight && currentHouse && [...sheep, ...chickens, ...cows].some(a => a.isHiding)) {
             this.targetHouse = currentHouse;
             this.targetAnimal = null;
         } else {
@@ -447,7 +533,10 @@ class Wolf {
                 let chickenIndex = chickens.indexOf(this.draggedAnimal);
                 if (chickenIndex > -1) chickens.splice(chickenIndex, 1);
 
-                if (sheep.length === 0 && chickens.length === 0) {
+                let cowIndex = cows.indexOf(this.draggedAnimal);
+                if(cowIndex > -1) cows.splice(cowIndex, 1);
+
+                if (sheep.length === 0 && chickens.length === 0 && cows.length === 0) {
                     gameOver();
                 }
                 return;
@@ -511,11 +600,9 @@ class Wolf {
     capture(target) {
         if (this.isCapturing || this.isDragging) return;
         
-        if (target instanceof Chicken) {
-            playSound(chickenSound);
-        } else {
-            playSound(wolfAttackSound);
-        }
+        if (target instanceof Chicken) playSound(chickenSound);
+        else if (target instanceof Cow) playSound(cowAmbientSound);
+        else playSound(wolfAttackSound);
 
         this.isCapturing = true; 
         this.isAttacking = true; 
@@ -541,3 +628,46 @@ class Wolf {
         setTimeout(() => { this.element.remove(); const wolfIndex = wolves.indexOf(this); if (wolfIndex > -1) wolves.splice(wolfIndex, 1); }, 500);
     }
 }
+
+
+class Hay {
+    constructor(px, py) {
+        this.x = px;
+        this.y = py;
+        this.stage = 0; // 0: small, 1: medium, 2: ready
+        this.isReady = false;
+
+        this.element = document.createElement('img');
+        this.element.className = 'hay-patch';
+        this.element.src = 'images/icons/rostock_small.png';
+        this.element.style.transform = `translate(${this.x}px, ${this.y}px) scale(0.5)`;
+        grassLayer.appendChild(this.element);
+        
+        // Animate appearance
+        requestAnimationFrame(() => {
+            this.element.style.transform = `translate(${this.x}px, ${this.y}px) scale(1)`;
+        });
+
+        setTimeout(() => this.growToMedium(), 3000);
+    }
+
+    growToMedium() {
+        if(this.stage !== 0) return;
+        this.stage = 1;
+        this.element.src = 'images/icons/rostock_sredny.png';
+        setTimeout(() => this.growToReady(), 5000);
+    }
+
+    growToReady() {
+        if(this.stage !== 1) return;
+        this.stage = 2;
+        this.isReady = true;
+        this.element.src = 'images/icons/rostock_ready.png';
+    }
+
+     destroy() {
+        this.element.style.opacity = 0;
+        setTimeout(() => this.element.remove(), 500);
+    }
+}
+
