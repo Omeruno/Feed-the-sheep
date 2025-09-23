@@ -13,8 +13,7 @@ const WOLF_BASE_SPAWN_CHANCE = 0.08;
 const WOLF_SPEED = 55;
 const HOUSE_BASE_HEALTH = 100;
 const BASE_ANIMAL_CAPACITY = 3;
-const CHICKEN_BASE_EGG_CHANCE = 0.05;
-const COW_BASE_MILK_CHANCE = 0.03;
+const CHICKEN_BASE_EGG_CHANCE = 0.1; // Увеличено
 
 // --- НАСТРОЙКИ ВРЕМЕНИ СУТОК (НОЧИ УСКОРЕНЫ НА 20%) ---
 const CYCLE_STAGES = [
@@ -78,6 +77,7 @@ const languageToggleButton = document.getElementById('language-toggle-button');
 const grandfatherDialogue = document.getElementById('grandfather-dialogue');
 const dialogueContinueButton = document.getElementById('dialogue-continue');
 const dialogueText = document.getElementById('dialogue-text');
+const playerMessage = document.getElementById('player-message');
 
 
 // --- ИГРОВЫЕ РЕСУРСЫ ---
@@ -121,7 +121,7 @@ let isMusicStarted = false, isPaused = false, isDialogueActive = false;
 let currentTool = 'grass';
 let wolfSpawnChance = WOLF_BASE_SPAWN_CHANCE;
 let GAME_DIMENSIONS = null;
-let sheepLevel = 1, chickenLevel = 1, cowLevel = 1, woolPerSheep = 1, milkChance = COW_BASE_MILK_CHANCE, eggChance = CHICKEN_BASE_EGG_CHANCE;
+let sheepLevel = 1, chickenLevel = 1, cowLevel = 1, woolPerSheep = 1, eggChance = CHICKEN_BASE_EGG_CHANCE;
 let maxAnimals = BASE_ANIMAL_CAPACITY;
 let hasRepairHammer = false;
 
@@ -185,7 +185,8 @@ const translations = {
         on: 'ВКЛ',
         off: 'ВЫКЛ',
         grandfather_dialogue: 'Ну здравствуй, молодой! Купил землю... с одной курицей?! Ха-ха, фермер от бога!\nСмотри в оба — твари тут свирепые. Загляни в магазин, а то долго не протянешь.',
-        dialogue_continue: 'Продолжить'
+        dialogue_continue: 'Продолжить',
+        no_seeds: 'Нечего сажать, загляни в магазин'
     },
     'eng': {
         loading: 'LOADING',
@@ -226,7 +227,8 @@ const translations = {
         on: 'ON',
         off: 'OFF',
         grandfather_dialogue: "Well hello, young one! Bought some land... with a single chicken?! Ha-ha, a natural farmer!\nWatch your back - the beasts here are fierce. Visit the shop, or you won't last long.",
-        dialogue_continue: 'Continue'
+        dialogue_continue: 'Continue',
+        no_seeds: 'Nothing to plant, check the shop'
     }
 };
 
@@ -283,9 +285,50 @@ function updateResourceCounters() {
     haySeedAmountSpan.textContent = haySeedCount;
 }
 
+function showPlayerMessage(messageKey) {
+    playerMessage.textContent = translations[currentLanguage][messageKey];
+    playerMessage.classList.add('show');
+    setTimeout(() => {
+        playerMessage.classList.remove('show');
+    }, 2000);
+}
+
 // --- МЕХАНИКА ИГРЫ ---
-function spawnGrass(px, py) { if(grassSeedCount <= 0) return; grassSeedCount--; updateResourceCounters(); playSound(plantSound); const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO; if (py <= walkableTop || isPointBlocked(px, py)) return; const patchX = clamp(px - 12.5, 0, GAME_DIMENSIONS.width - 25); const patchY = clamp(py - 12.5, walkableTop, GAME_DIMENSIONS.height - 25); const patchElement = document.createElement('img'); patchElement.className = 'grass-patch'; patchElement.src = 'images/grass/grass.png'; patchElement.style.transform = `translate(${patchX}px, ${patchY}px)`; grassLayer.appendChild(patchElement); grassPatches.push({ x: patchX, y: patchY, element: patchElement }); [...sheep].forEach(animal => { if (animal.isWaiting) animal.decideNextAction(); }); }
-function spawnHay(px, py) { if(haySeedCount <= 0) return; haySeedCount--; updateResourceCounters(); playSound(plantSound); const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO; if (py <= walkableTop || isPointBlocked(px, py)) return; const patchX = clamp(px - 10, 0, GAME_DIMENSIONS.width - 20); const patchY = clamp(py - 10, walkableTop, GAME_DIMENSIONS.height - 20); hayPatches.push(new Hay(patchX, patchY)); [...cows].forEach(cow => { if (cow.isWaiting) cow.decideNextAction() }); }
+function spawnGrass(px, py) { 
+    if(grassSeedCount <= 0) { 
+        showPlayerMessage('no_seeds'); 
+        return; 
+    } 
+    grassSeedCount--; 
+    updateResourceCounters(); 
+    playSound(plantSound); 
+    const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO; 
+    if (py <= walkableTop || isPointBlocked(px, py)) return; 
+    const patchX = clamp(px - 12.5, 0, GAME_DIMENSIONS.width - 25); 
+    const patchY = clamp(py - 12.5, walkableTop, GAME_DIMENSIONS.height - 25); 
+    const patchElement = document.createElement('img'); 
+    patchElement.className = 'grass-patch'; 
+    patchElement.src = 'images/grass/grass.png'; 
+    patchElement.style.transform = `translate(${patchX}px, ${patchY}px)`; 
+    grassLayer.appendChild(patchElement); 
+    grassPatches.push({ x: patchX, y: patchY, element: patchElement }); 
+    [...sheep].forEach(animal => animal.decideNextAction()); 
+}
+function spawnHay(px, py) { 
+    if(haySeedCount <= 0) { 
+        showPlayerMessage('no_seeds'); 
+        return; 
+    } 
+    haySeedCount--; 
+    updateResourceCounters(); 
+    playSound(plantSound); 
+    const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO; 
+    if (py <= walkableTop || isPointBlocked(px, py)) return; 
+    const patchX = clamp(px - 10, 0, GAME_DIMENSIONS.width - 20); 
+    const patchY = clamp(py - 10, walkableTop, GAME_DIMENSIONS.height - 20); 
+    hayPatches.push(new Hay(patchX, patchY)); 
+    [...cows].forEach(cow => cow.decideNextAction()); 
+}
 function spawnWool(px, py, amount = 1) { woolCount += amount; updateResourceCounters(); const el = document.createElement('img'); el.src = 'images/wool/wool.png'; el.className = 'wool-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'wool-counter'); }
 function spawnSkin(px, py) { skinCount++; updateResourceCounters(); const el = document.createElement('img'); el.src = 'images/skin/skin.png'; el.className = 'skin-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'skin-counter'); }
 function spawnEgg(px, py) { eggCount++; updateResourceCounters(); const el = document.createElement('img'); el.src = EGG_ICON_SRC; el.className = 'egg-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'egg-counter'); }
@@ -347,6 +390,8 @@ function runNextStage() {
 
 // --- ЛОГИКА МАГАЗИНА ---
 function updateShopUI() {
+    if (shopMenu.classList.contains('hidden')) return;
+    
     const lang = translations[currentLanguage];
     document.getElementById('shop-gold').textContent = Math.floor(goldCount);
     document.getElementById('shop-wood').textContent = woodCount;
@@ -423,7 +468,7 @@ function handleShopTransaction(event) {
     const totalAnimals = sheep.length + chickens.length + cows.length;
 
     if (item === 'upgrade_sheep') { if (goldCount >= costGold) { goldCount -= costGold; sheepLevel++; woolPerSheep++; purchaseSuccess = true; }
-    } else if (item === 'upgrade_cow') { if (goldCount >= costGold) { goldCount -= costGold; cowLevel++; milkChance = COW_BASE_MILK_CHANCE * (1 + cowLevel * 0.25); purchaseSuccess = true; }
+    } else if (item === 'upgrade_cow') { if (goldCount >= costGold) { goldCount -= costGold; cowLevel++; purchaseSuccess = true; }
     } else if (item === 'upgrade_chicken') { if (goldCount >= costGold) { goldCount -= costGold; chickenLevel++; eggChance = CHICKEN_BASE_EGG_CHANCE * (1 + chickenLevel * 0.2); purchaseSuccess = true; }
     } else if (item === 'upgrade_autofarm') { if (currentHouse && goldCount >= costGold) { goldCount -= costGold; currentHouse.autoFarmLevel++; currentHouse.updateFarmRates(); purchaseSuccess = true; }
     } else if (item === 'upgrade_clickfarm') { if (currentHouse && goldCount >= costGold) { goldCount -= costGold; currentHouse.clickFarmLevel++; currentHouse.updateFarmRates(); purchaseSuccess = true; }
@@ -561,7 +606,13 @@ function initializeGame() {
         shopMenu.classList.remove('hidden'); 
     });
     closeShopButton.addEventListener('click', () => { isPaused = false; shopMenu.classList.add('hidden'); });
-    shopMenu.addEventListener('click', handleShopTransaction);
+    shopMenu.addEventListener('click', (e) => {
+        if(e.target.classList.contains('shop-section-toggle')) {
+            e.target.parentElement.classList.toggle('open');
+        } else {
+            handleShopTransaction(e);
+        }
+    });
     restartButton.addEventListener('click', () => { location.reload(); });
     menuToggleButton.addEventListener('click', () => { mainActionsContainer.classList.toggle('open'); });
     resourcesToggleButton.addEventListener('click', () => { document.getElementById('resources-panel-container').classList.toggle('open'); });
@@ -607,4 +658,5 @@ window.addEventListener('load', () => {
     if (gameWorld) { preloadAssets(); } 
     else { console.error('Критическая ошибка: элемент #game-world не найден!'); }
 });
+
 

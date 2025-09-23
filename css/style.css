@@ -152,6 +152,29 @@ html, body {
     touch-action: none;
 }
 
+#player-message {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(231, 76, 60, 0.8);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 10px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 10px;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    pointer-events: none;
+    text-align: center;
+}
+
+#player-message.show {
+    opacity: 1;
+}
+
+
 #top-left-ui {
     position: absolute;
     top: 15px;
@@ -350,7 +373,7 @@ html, body {
     align-items: center;
     font-family: 'Press Start 2P', cursive;
     overflow-y: auto;
-    padding-top: 20px;
+    padding-top: 140px; /* Увеличено для смещения всего контента вниз */
     padding-bottom: 20px;
 }
 
@@ -374,7 +397,7 @@ html, body {
 
 #shop-player-resources {
     position: absolute;
-    top: 40px;
+    top: 60px; /* Смещено немного ниже для гармонии */
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -385,10 +408,41 @@ html, body {
     border: 2px solid #4a2d14;
 }
 
-.shop-section { width: 100%; margin-top: 80px; }
-.shop-section:first-of-type { margin-top: 0; }
-.shop-section h2 { text-align: center; font-size: 16px; margin-bottom: 10px; }
-.shop-items { display: flex; flex-direction: column; gap: 8px; }
+.shop-section { width: 100%; margin-top: 15px; }
+/* Удалено старое правило .shop-section:first-of-type */
+
+.shop-section-toggle { 
+    text-align: center; 
+    font-size: 16px; 
+    margin-bottom: 10px;
+    background-color: #c58654;
+    padding: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    position: relative;
+}
+.shop-section-toggle::after {
+    content: '▼';
+    position: absolute;
+    right: 15px;
+    transition: transform 0.3s;
+}
+.shop-section.open .shop-section-toggle::after {
+    transform: rotate(180deg);
+}
+
+
+.shop-items-container {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-in-out;
+}
+
+.shop-section.open .shop-items-container {
+    max-height: 500px; /* Достаточно большая высота */
+}
+
+.shop-items { display: flex; flex-direction: column; gap: 8px; padding-top: 5px;}
 .shop-item {
     padding: 8px;
     background-color: #e7a977;
@@ -650,4 +704,7 @@ html, body {
     border-radius: 5px;
     cursor: pointer;
 }
+
+
+
 

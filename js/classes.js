@@ -1,5 +1,5 @@
 // ==================================================================
-// ==                       КЛАССЫ ОБЪЕКТОВ                        ==
+// ==                       КЛАССЫ ОБЪЕКТОВ                        ==
 // ==================================================================
 // В этом файле хранятся "чертежи" для всех игровых объектов:
 // овец, кур, волков, домов и облаков.
@@ -62,15 +62,16 @@ class House {
         this.clickFarmLevel = initialClickFarmLevel;
         this.updateFarmRates();
 
-        this.element.addEventListener('pointerdown', () => this.handleClick());
+        this.element.addEventListener('pointerdown', (event) => this.handleClick(event));
     }
     
     updateFarmRates() {
-        this.autoFarmRate = 0.1 * this.autoFarmLevel;
-        this.clickFarmValue = 0.2 * this.clickFarmLevel;
+        this.autoFarmRate = 0.15 * this.autoFarmLevel; // Увеличено
+        this.clickFarmValue = 0.5 * this.clickFarmLevel; // Увеличено
     }
 
-    handleClick() {
+    handleClick(event) {
+        event.stopPropagation(); // <-- ДОБАВЛЕНО: Останавливаем "протекание" клика
         if(isPaused) return;
         goldCount += this.clickFarmValue;
         updateResourceCounters();
@@ -486,7 +487,10 @@ class Wolf {
         this.isAttacking = false;
         this.isDragging = false; 
         this.draggedAnimal = null; 
-        this.element.addEventListener('pointerdown', () => this.scare());
+        this.element.addEventListener('pointerdown', (event) => {
+            event.stopPropagation(); // <-- ДОБАВЛЕНО: Останавливаем "протекание" клика
+            this.scare();
+        });
     }
 
     findTarget() {
@@ -522,7 +526,6 @@ class Wolf {
                 this.element.remove();
                 if(this.draggedAnimal) {
                     this.draggedAnimal.element.remove();
-                    if (this.draggedAnimal.hungerIcon) this.draggedAnimal.hungerIcon.remove();
                 }
                 const wolfIndex = wolves.indexOf(this);
                 if (wolfIndex > -1) wolves.splice(wolfIndex, 1);
