@@ -1,5 +1,7 @@
 // ==================================================================
-// ==                 ДОПОЛНИТЕЛЬНЫЕ КЛАССЫ ОБЪЕКТОВ                ==
+// ==                                                              ==
+// ==                ДОПОЛНИТЕЛЬНЫЕ КЛАССЫ ОБЪЕКТОВ                ==
+// ==                                                              ==
 // ==================================================================
 // Здесь хранятся классы для новых игровых механик,
 // таких как свиньи и кормушки.
@@ -195,6 +197,196 @@ class Trough {
     
     isFull() {
         return this.food >= this.capacity;
+    }
+}
+
+// +++ НОВЫЙ КЛАСС ДЛЯ ЛИСЫ +++
+class Fox {
+    constructor() {
+        this.element = document.createElement('img');
+        this.element.className = 'fox';
+        this.element.src = foxSprites.left;
+        gameWorld.appendChild(this.element);
+        playSound(foxSound);
+
+        this.fromLeft = Math.random() < 0.5;
+        this.x = this.fromLeft ? -50 : GAME_DIMENSIONS.width + 50;
+        const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
+        this.y = walkableTop + Math.random() * (GAME_DIMENSIONS.height - walkableTop - 30);
+        this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+        this.element.style.visibility = 'visible';
+        
+        this.targetAnimal = null;
+        this.targetHouse = null;
+        this.isDying = false;
+        this.isJumping = false;
+        this.isCapturing = false;
+        this.isAttacking = false;
+        this.isDragging = false; 
+        this.draggedAnimal = null; 
+        
+        this.element.addEventListener('pointerdown', (event) => {
+            event.stopPropagation();
+            this.handleClick();
+        });
+
+        this.findTarget();
+    }
+
+    findTarget() {
+        const availableAnimals = [...sheep, ...chickens, ...cows, ...pigs].filter(a => !a.isScared && !a.isHiding);
+        this.targetAnimal = availableAnimals.length > 0 ? availableAnimals[Math.floor(Math.random() * availableAnimals.length)] : null;
+    }
+
+    update(deltaTime) {
+        if (this.isDying || this.isJumping) return;
+        
+        if (currentHouse) {
+            this.element.style.zIndex = this.y > currentHouse.layerThreshold ? '6' : '4';
+        }
+
+        const stage = CYCLE_STAGES.find(s => s.frameIndex === (currentStageIndex > 0 ? currentStageIndex - 1 : 0)) || CYCLE_STAGES[0];
+        const anyAnimalHiding = [...sheep, ...chickens, ...cows, ...pigs].some(a => a.isHiding);
+
+        if (stage.isNight && currentHouse && anyAnimalHiding) {
+            this.targetHouse = currentHouse;
+            this.targetAnimal = null;
+        } else {
+            this.targetHouse = null;
+            if (!this.targetAnimal || this.targetAnimal.isScared || this.targetAnimal.isHiding) {
+                this.findTarget();
+            }
+        }
+
+        if (this.isAttacking) return;
+        
+        if (this.isDragging && this.draggedAnimal) {
+            const exitX = this.fromLeft ? -50 : GAME_DIMENSIONS.width + 50;
+            const exitY = this.y;
+            const dx = exitX - this.x;
+            const dy = exitY - this.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < 10) {
+                this.element.remove();
+                if(this.draggedAnimal) { this.draggedAnimal.element.remove(); }
+                const foxIndex = foxes.indexOf(this);
+                if (foxIndex > -1) foxes.splice(foxIndex, 1);
+                
+                let sheepIndex = sheep.indexOf(this.draggedAnimal); if (sheepIndex > -1) sheep.splice(sheepIndex, 1);
+                let chickenIndex = chickens.indexOf(this.draggedAnimal); if (chickenIndex > -1) chickens.splice(chickenIndex, 1);
+                let cowIndex = cows.indexOf(this.draggedAnimal); if(cowIndex > -1) cows.splice(cowIndex, 1);
+                let pigIndex = pigs.indexOf(this.draggedAnimal); if(pigIndex > -1) pigs.splice(pigIndex, 1);
+
+                if (sheep.length === 0 && chickens.length === 0 && cows.length === 0 && pigs.length === 0) { gameOver(); }
+                return;
+            }
+            const moveX = (dx / distance) * FOX_SPEED * deltaTime;
+            this.x += moveX;
+            this.element.src = this.fromLeft ? foxSprites.left : foxSprites.right;
+            this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+            if(this.draggedAnimal) {
+                this.draggedAnimal.x = this.x + (this.fromLeft ? 15 : -15);
+                this.draggedAnimal.y = this.y;
+                this.draggedAnimal.element.style.transform = `translate(${this.draggedAnimal.x}px, ${this.draggedAnimal.y}px)`;
+            }
+            return;
+        }
+
+        if (this.isCapturing) return;
+
+        let targetX, targetY;
+        if (this.targetHouse) {
+            targetX = this.targetHouse.x + 50;
+            targetY = this.targetHouse.y + 50;
+        } else if (this.targetAnimal) {
+            targetX = this.targetAnimal.x;
+            targetY = this.targetAnimal.y;
+        } else {
+            targetX = this.fromLeft ? GAME_DIMENSIONS.width + 50 : -50;
+            targetY = this.y;
+        }
+
+        const dx = targetX - this.x;
+        const dy = targetY - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < 15 && (this.targetAnimal || this.targetHouse)) {
+            if (this.targetHouse) this.attackHouse(this.targetHouse);
+            else if (this.targetAnimal) this.capture(this.targetAnimal);
+            return;
+        }
+        
+        if (distance < 1 && !this.targetAnimal && !this.targetHouse) {
+            this.element.remove();
+            const foxIndex = foxes.indexOf(this);
+            if (foxIndex > -1) foxes.splice(foxIndex, 1);
+            return;
+        }
+
+        const moveX = (dx / distance) * FOX_SPEED * deltaTime;
+        const moveY = (dy / distance) * FOX_SPEED * deltaTime;
+        this.x += moveX;
+        this.y += moveY;
+        this.element.src = dx > 0 ? foxSprites.right : foxSprites.left;
+        this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+    }
+
+    attackHouse(house) {
+        if (this.isAttacking) return;
+        this.isAttacking = true;
+        this.element.src = foxSprites.attack;
+        playSound(wolfAttackSound);
+        house.takeDamage(10);
+        setTimeout(() => { this.isAttacking = false; }, 1000);
+    }
+
+    capture(target) {
+        if (this.isCapturing || this.isDragging) return;
+        if (target instanceof Chicken) playSound(chickenSound);
+        else playSound(wolfAttackSound);
+
+        this.isCapturing = true; 
+        this.isAttacking = true; 
+        this.element.src = foxSprites.attack;
+        setTimeout(() => {
+            this.isAttacking = false;
+            this.isDragging = true;
+            this.draggedAnimal = target;
+            target.isScared = true;
+        }, 500);
+    }
+    
+    handleClick() {
+        if (this.isDying || this.isJumping) return;
+
+        if (Math.random() < 0.35) { // 35% шанс на прыжок
+            this.isJumping = true;
+            this.element.src = foxSprites.up;
+            const originalY = this.y;
+            this.y -= 25; // Прыжок вверх
+            this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+            
+            setTimeout(() => {
+                this.y = originalY;
+                this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+                this.isJumping = false;
+            }, 300);
+
+        } else { // 65% шанс умереть
+            this.isDying = true;
+            playSound(wolfDeadSound);
+            if (this.isDragging && this.draggedAnimal) {
+                this.draggedAnimal.isScared = false;
+                this.draggedAnimal.decideNextAction();
+            }
+            spawnFoxSkin(this.x, this.y);
+            this.element.style.opacity = 0;
+            setTimeout(() => { 
+                this.element.remove(); 
+                const foxIndex = foxes.indexOf(this); 
+                if (foxIndex > -1) foxes.splice(foxIndex, 1); 
+            }, 500);
+        }
     }
 }
 
