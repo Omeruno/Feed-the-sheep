@@ -1,5 +1,5 @@
 // ==================================================================
-// ==                       КЛАССЫ ОБЪЕКТОВ                        ==
+// ==                           КЛАССЫ ОБЪЕКТОВ                       ==
 // ==================================================================
 // В этом файле хранятся "чертежи" для всех игровых объектов:
 // овец, кур, волков, домов и облаков.
@@ -73,6 +73,7 @@ class House {
     handleClick(event) {
         event.stopPropagation(); // <-- ДОБАВЛЕНО: Останавливаем "протекание" клика
         if(isPaused) return;
+        playSound(clickSound);
         goldCount += this.clickFarmValue;
         updateResourceCounters();
         this.element.classList.add('clicked');
@@ -106,7 +107,7 @@ class House {
         this.hpBarContainer.remove();
         currentHouse = null;
         maxAnimals = BASE_ANIMAL_CAPACITY;
-        [...sheep, ...chickens, ...cows].forEach(animal => {
+        [...sheep, ...chickens, ...cows, ...pigs].forEach(animal => {
             animal.isHiding = false;
             animal.element.style.visibility = 'visible';
         });
@@ -190,8 +191,8 @@ class Sheep {
 
         if (this.isHiding || this.isEating || this.isScared) return;
 
-        const isNight = currentStageIndex === 4; 
-        if (isNight && currentHouse) {
+        const stage = CYCLE_STAGES.find(s => s.frameIndex === (currentStageIndex > 0 ? currentStageIndex - 1 : 0)) || CYCLE_STAGES[0];
+        if (stage.isNight && currentHouse) {
             this.targetX = currentHouse.x + 25;
             this.targetY = currentHouse.y + 50;
             const distanceToHouse = Math.sqrt(Math.pow(this.targetX - this.x, 2) + Math.pow(this.targetY - this.y, 2));
@@ -308,8 +309,8 @@ class Chicken {
 
         if (this.isHiding || this.isEating || this.isScared) return;
 
-        const isNight = currentStageIndex === 4; 
-        if (isNight && currentHouse) {
+        const stage = CYCLE_STAGES.find(s => s.frameIndex === (currentStageIndex > 0 ? currentStageIndex - 1 : 0)) || CYCLE_STAGES[0];
+        if (stage.isNight && currentHouse) {
             this.targetX = currentHouse.x + 25;
             this.targetY = currentHouse.y + 50;
             const distanceToHouse = Math.sqrt(Math.pow(this.targetX - this.x, 2) + Math.pow(this.targetY - this.y, 2));
@@ -414,8 +415,8 @@ class Cow {
 
         if (this.isHiding || this.isEating || this.isScared) return;
 
-        const isNight = currentStageIndex === 4;
-        if (isNight && currentHouse) {
+        const stage = CYCLE_STAGES.find(s => s.frameIndex === (currentStageIndex > 0 ? currentStageIndex - 1 : 0)) || CYCLE_STAGES[0];
+        if (stage.isNight && currentHouse) {
             this.targetX = currentHouse.x + 25;
             this.targetY = currentHouse.y + 50;
             const distanceToHouse = Math.sqrt(Math.pow(this.targetX - this.x, 2) + Math.pow(this.targetY - this.y, 2));
@@ -480,22 +481,25 @@ class Wolf {
         this.y = walkableTop + Math.random() * (GAME_DIMENSIONS.height - walkableTop - 30);
         this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
         this.element.style.visibility = 'visible';
-        this.targetAnimal = this.findTarget();
+        this.targetAnimal = null;
         this.targetHouse = null;
         this.isScared = false;
         this.isCapturing = false;
         this.isAttacking = false;
         this.isDragging = false; 
         this.draggedAnimal = null; 
+        
         this.element.addEventListener('pointerdown', (event) => {
-            event.stopPropagation(); // <-- ДОБАВЛЕНО: Останавливаем "протекание" клика
+            event.stopPropagation(); // <-- Останавливаем "протекание" клика
             this.scare();
         });
+
+        this.findTarget(); // Первоначальный поиск цели
     }
 
     findTarget() {
-        const availableAnimals = [...sheep, ...chickens, ...cows].filter(a => !a.isScared && !a.isHiding);
-        return availableAnimals.length > 0 ? availableAnimals[Math.floor(Math.random() * availableAnimals.length)] : null;
+        const availableAnimals = [...sheep, ...chickens, ...cows, ...pigs].filter(a => !a.isScared && !a.isHiding);
+        this.targetAnimal = availableAnimals.length > 0 ? availableAnimals[Math.floor(Math.random() * availableAnimals.length)] : null;
     }
 
     update(deltaTime) {
@@ -503,14 +507,17 @@ class Wolf {
             this.element.style.zIndex = this.y > currentHouse.layerThreshold ? '6' : '4';
         }
 
-        const isNight = currentStageIndex === 4;
-        if (isNight && currentHouse && [...sheep, ...chickens, ...cows].some(a => a.isHiding)) {
+        // Логика определения цели (чтобы не переключаться с дома на животное)
+        const stage = CYCLE_STAGES.find(s => s.frameIndex === (currentStageIndex > 0 ? currentStageIndex - 1 : 0)) || CYCLE_STAGES[0];
+        const anyAnimalHiding = [...sheep, ...chickens, ...cows, ...pigs].some(a => a.isHiding);
+
+        if (stage.isNight && currentHouse && anyAnimalHiding) {
             this.targetHouse = currentHouse;
             this.targetAnimal = null;
         } else {
             this.targetHouse = null;
             if (!this.targetAnimal || this.targetAnimal.isScared || this.targetAnimal.isHiding) {
-                this.targetAnimal = this.findTarget();
+                this.findTarget();
             }
         }
 
@@ -530,16 +537,12 @@ class Wolf {
                 const wolfIndex = wolves.indexOf(this);
                 if (wolfIndex > -1) wolves.splice(wolfIndex, 1);
                 
-                let sheepIndex = sheep.indexOf(this.draggedAnimal);
-                if (sheepIndex > -1) sheep.splice(sheepIndex, 1);
+                let sheepIndex = sheep.indexOf(this.draggedAnimal); if (sheepIndex > -1) sheep.splice(sheepIndex, 1);
+                let chickenIndex = chickens.indexOf(this.draggedAnimal); if (chickenIndex > -1) chickens.splice(chickenIndex, 1);
+                let cowIndex = cows.indexOf(this.draggedAnimal); if(cowIndex > -1) cows.splice(cowIndex, 1);
+                let pigIndex = pigs.indexOf(this.draggedAnimal); if(pigIndex > -1) pigs.splice(pigIndex, 1);
 
-                let chickenIndex = chickens.indexOf(this.draggedAnimal);
-                if (chickenIndex > -1) chickens.splice(chickenIndex, 1);
-
-                let cowIndex = cows.indexOf(this.draggedAnimal);
-                if(cowIndex > -1) cows.splice(cowIndex, 1);
-
-                if (sheep.length === 0 && chickens.length === 0 && cows.length === 0) {
+                if (sheep.length === 0 && chickens.length === 0 && cows.length === 0 && pigs.length === 0) {
                     gameOver();
                 }
                 return;
@@ -566,8 +569,9 @@ class Wolf {
             targetX = this.targetAnimal.x;
             targetY = this.targetAnimal.y;
         } else {
-            targetX = GAME_DIMENSIONS.width / 2;
-            targetY = GAME_DIMENSIONS.height * 0.8;
+            // Если целей нет, волк просто уходит
+            targetX = this.fromLeft ? GAME_DIMENSIONS.width + 50 : -50;
+            targetY = this.y;
         }
 
         const dx = targetX - this.x;
@@ -580,6 +584,14 @@ class Wolf {
             return;
         }
         
+        if (distance < 1 && !this.targetAnimal && !this.targetHouse) {
+             // Волк ушел за экран
+             this.element.remove();
+             const wolfIndex = wolves.indexOf(this);
+             if (wolfIndex > -1) wolves.splice(wolfIndex, 1);
+             return;
+        }
+
         const moveX = (dx / distance) * WOLF_SPEED * deltaTime;
         const moveY = (dy / distance) * WOLF_SPEED * deltaTime;
         
