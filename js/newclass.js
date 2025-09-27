@@ -1,10 +1,153 @@
 // ==================================================================
 // ==                                                              ==
-// ==                ДОПОЛНИТЕЛЬНЫЕ КЛАССЫ ОБЪЕКТОВ                ==
+// ==               ДОПОЛНИТЕЛЬНЫЕ КЛАССЫ ОБЪЕКТОВ                 ==
 // ==                                                              ==
 // ==================================================================
-// Здесь хранятся классы для новых игровых механик,
-// таких как свиньи и кормушки.
+// Здесь хранятся классы для новых игровых механик.
+
+// +++ КЛАСС ДЛЯ ЗОНЫ ДОБЫЧИ РЕСУРСОВ (ОБЩИЙ) +++
+class ResourceArea {
+    constructor(config) {
+        this.type = config.type;
+        this.container = document.getElementById(config.containerId);
+        this.level = 1;
+        this.isFarming = false;
+        this.isReady = false;
+        this.timerId = null;
+        this.remainingTime = 0;
+        this.sprites = config.sprites;
+        this.requiredHouseLevel = config.requiredHouseLevel;
+        this.messageKey = config.messageKey;
+        this.resourceIcon = config.resourceIcon;
+        this.resourceCounterId = config.resourceCounterId;
+        this.addResource = config.addResource;
+
+        this.createVisuals();
+        this.createUI();
+
+        this.container.addEventListener('click', () => this.handleClick());
+    }
+
+    createVisuals() {
+        // Создаем несколько изображений для более живого вида
+        for (let i = 0; i < 3; i++) {
+            const img = document.createElement('img');
+            img.src = this.sprites[0]; // Start with level 1 image
+            const offsetX = (Math.random() - 0.5) * 80; // Увеличиваем разброс по X
+            const offsetY = (Math.random() - 0.5) * 50; // Увеличиваем разброс по Y
+            const scale = 0.9 + Math.random() * 0.3; 
+            img.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+            img.style.zIndex = i;
+            this.container.appendChild(img);
+        }
+        this.visuals = this.container.querySelectorAll('img');
+    }
+
+    createUI() {
+        this.progressContainer = document.createElement('div');
+        this.progressContainer.className = 'resource-progress-container hidden';
+        
+        this.progressBar = document.createElement('div');
+        this.progressBar.className = 'resource-progress-bar';
+        
+        this.timerText = document.createElement('span');
+        this.timerText.className = 'resource-timer';
+        
+        this.progressContainer.appendChild(this.progressBar);
+        this.progressContainer.appendChild(this.timerText);
+        this.container.appendChild(this.progressContainer);
+
+        this.collectIcon = document.createElement('img');
+        this.collectIcon.src = this.resourceIcon;
+        this.collectIcon.className = 'collect-icon hidden';
+        this.container.appendChild(this.collectIcon);
+    }
+
+    handleClick() {
+        if (this.isFarming) return;
+
+        if (!currentHouse || currentHouse.level < this.requiredHouseLevel) {
+            showPlayerMessage(this.messageKey);
+            return;
+        }
+
+        if (this.isReady) {
+            this.collect();
+        } else {
+            this.startFarming();
+        }
+    }
+
+    startFarming() {
+        this.isFarming = true;
+        this.collectIcon.classList.add('hidden');
+        this.progressContainer.classList.remove('hidden');
+        
+        const baseTime = 60; // 60 секунд
+        const timeToFarm = baseTime / this.level;
+        this.remainingTime = timeToFarm;
+
+        this.timerId = setInterval(() => {
+            this.remainingTime--;
+            const progress = 100 - (this.remainingTime / timeToFarm) * 100;
+            this.progressBar.style.width = `${progress}%`;
+            this.timerText.textContent = `${Math.floor(this.remainingTime)}s`;
+
+            if (this.remainingTime <= 0) {
+                this.finishFarming();
+            }
+        }, 1000);
+    }
+    
+    finishFarming() {
+        clearInterval(this.timerId);
+        this.isFarming = false;
+        this.isReady = true;
+        this.progressContainer.classList.add('hidden');
+        this.collectIcon.classList.remove('hidden');
+        this.progressBar.style.width = '0%';
+    }
+
+    collect() {
+        this.isReady = false;
+        this.collectIcon.classList.add('hidden');
+        const amount = this.level * 5; // 5 ресурсов за уровень
+        this.addResource(amount);
+        
+        const rect = this.container.getBoundingClientRect();
+        const startX = rect.left + rect.width / 2 - GAME_DIMENSIONS.left;
+        const startY = rect.top + rect.height / 2 - GAME_DIMENSIONS.top;
+
+        for (let i = 0; i < amount; i++) {
+            setTimeout(() => {
+                const flyingResource = document.createElement('img');
+                flyingResource.src = this.resourceIcon;
+                flyingResource.className = 'flying-coin'; // Re-use styling
+                flyingResource.style.transform = `translate(${startX + (Math.random()-0.5)*20}px, ${startY + (Math.random()-0.5)*20}px)`;
+                flyingResource.style.visibility = 'visible';
+                gameWorld.appendChild(flyingResource);
+                animateResourceToUI(flyingResource, this.resourceCounterId);
+            }, i * 100);
+        }
+    }
+
+    upgrade() {
+        this.level++;
+        this.updateImage();
+    }
+
+    updateImage() {
+        let imageIndex = 0;
+        if (this.level >= 5) imageIndex = 1;
+        if (this.level >= 10) imageIndex = 2;
+        if (this.level >= 15) imageIndex = 3;
+        
+        this.visuals.forEach(img => {
+            img.src = this.sprites[imageIndex];
+        });
+    }
+}
+
 
 // +++ НОВЫЙ КЛАСС ДЛЯ СВИНЬИ +++
 class Pig {
@@ -198,6 +341,15 @@ class Trough {
     isFull() {
         return this.food >= this.capacity;
     }
+
+    destroy() {
+        this.element.remove();
+        this.foodBarContainer.remove();
+        const index = troughs.indexOf(this);
+        if (index > -1) {
+            troughs.splice(index, 1);
+        }
+    }
 }
 
 // +++ НОВЫЙ КЛАСС ДЛЯ ЛИСЫ +++
@@ -327,6 +479,11 @@ class Fox {
         const moveY = (dy / distance) * FOX_SPEED * deltaTime;
         this.x += moveX;
         this.y += moveY;
+
+        if (currentHouse && this.y < currentHouse.y + 50) { // Не позволяет заходить за дом
+            this.y = currentHouse.y + 50;
+        }
+        
         this.element.src = dx > 0 ? foxSprites.right : foxSprites.left;
         this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
     }
@@ -335,7 +492,6 @@ class Fox {
         if (this.isAttacking) return;
         this.isAttacking = true;
         this.element.src = foxSprites.attack;
-        playSound(wolfAttackSound);
         house.takeDamage(10);
         setTimeout(() => { this.isAttacking = false; }, 1000);
     }
@@ -387,6 +543,206 @@ class Fox {
                 if (foxIndex > -1) foxes.splice(foxIndex, 1); 
             }, 500);
         }
+    }
+}
+
+// +++ НОВЫЙ КЛАСС ДЛЯ МЕДВЕДЯ +++
+class Bear {
+    constructor() {
+        this.element = document.createElement('img');
+        this.element.className = 'bear';
+        this.element.src = bearSprites.left;
+        gameWorld.appendChild(this.element);
+        playSound(bearSound);
+
+        this.fromLeft = Math.random() < 0.5;
+        this.x = this.fromLeft ? -80 : GAME_DIMENSIONS.width + 80;
+        const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
+        this.y = walkableTop + Math.random() * (GAME_DIMENSIONS.height - walkableTop - 60);
+        this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+        this.element.style.visibility = 'visible';
+        
+        this.health = BEAR_HEALTH;
+        this.maxHealth = BEAR_HEALTH;
+        this.isDying = false;
+        this.isAttacking = false;
+        this.targetAnimal = null;
+
+        this.hpBarContainer = document.createElement('div');
+        this.hpBarContainer.className = 'hp-bar-container';
+        this.hpBar = document.createElement('div');
+        this.hpBar.className = 'hp-bar';
+        this.hpBarContainer.appendChild(this.hpBar);
+        gameWorld.appendChild(this.hpBarContainer);
+        this.updateHpBar();
+
+        this.element.addEventListener('pointerdown', (event) => {
+            event.stopPropagation();
+            this.takeDamage();
+        });
+    }
+
+    updateHpBar() {
+        this.hpBar.style.width = `${(this.health / this.maxHealth) * 100}%`;
+        const barX = this.x + (this.element.offsetWidth / 2) - 25;
+        const barY = this.y - 15;
+        this.hpBarContainer.style.transform = `translate(${barX}px, ${barY}px)`;
+        this.hpBarContainer.style.visibility = 'visible';
+    }
+
+    takeDamage() {
+        if (this.isDying) return;
+        this.health--;
+        this.updateHpBar();
+        playSound(bearDamageSound);
+        
+        this.element.src = bearSprites.damage;
+        setTimeout(() => {
+            if (!this.isAttacking && !this.isDying) {
+               this.element.src = this.x > (GAME_DIMENSIONS.width / 2) ? bearSprites.left : bearSprites.right;
+            }
+        }, 200);
+
+        if (this.health <= 0) {
+            this.die();
+        }
+    }
+
+    die() {
+        if (this.isDying) return;
+        this.isDying = true;
+        playSound(wolfDeadSound);
+        spawnBearSkin(this.x, this.y);
+
+        this.element.style.opacity = 0;
+        this.hpBarContainer.remove();
+        setTimeout(() => {
+            this.element.remove();
+            const index = bears.indexOf(this);
+            if (index > -1) bears.splice(index, 1);
+        }, 500);
+    }
+    
+    findTargetAnimal() {
+        const availableAnimals = [...sheep, ...chickens, ...cows, ...pigs].filter(a => !a.isScared && !a.isHiding);
+        if (availableAnimals.length > 0) {
+            this.targetAnimal = availableAnimals.reduce((closest, current) => {
+                const distToClosest = Math.sqrt(Math.pow(this.x - closest.x, 2) + Math.pow(this.y - closest.y, 2));
+                const distToCurrent = Math.sqrt(Math.pow(this.x - current.x, 2) + Math.pow(this.y - current.y, 2));
+                return distToCurrent < distToClosest ? current : closest;
+            });
+        } else {
+            this.targetAnimal = null;
+        }
+    }
+
+    update(deltaTime) {
+        if (this.isDying || this.isAttacking) {
+            this.updateHpBar(); // Keep HP bar in position during attack
+            return;
+        }
+
+        let targetX, targetY;
+        
+        if (currentHouse && currentHouse.health > 0) {
+            this.targetAnimal = null;
+            targetX = currentHouse.x + 50; // Aim for the center of the house
+            targetY = currentHouse.y + 50;
+        } else {
+            if (!this.targetAnimal || this.targetAnimal.isScared) {
+                this.findTargetAnimal();
+            }
+            if (this.targetAnimal) {
+                 targetX = this.targetAnimal.x;
+                 targetY = this.targetAnimal.y;
+            } else {
+                // If there's no house and no animals, the bear just leaves
+                targetX = this.fromLeft ? GAME_DIMENSIONS.width + 80 : -80;
+                targetY = this.y;
+            }
+        }
+
+        const dx = targetX - this.x;
+        const dy = targetY - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < 25) {
+            if (currentHouse && currentHouse.health > 0) {
+                this.attackHouse(currentHouse);
+            } else if (this.targetAnimal) {
+                this.attackAnimal(this.targetAnimal);
+            }
+            return;
+        } else if (distance < 1 && (!currentHouse || currentHouse.health <= 0) && !this.targetAnimal) {
+            // Bear left the screen
+            this.element.remove();
+            this.hpBarContainer.remove();
+            const index = bears.indexOf(this);
+            if (index > -1) bears.splice(index, 1);
+            return;
+        }
+
+        const moveX = (dx / distance) * BEAR_SPEED * deltaTime;
+        const moveY = (dy / distance) * BEAR_SPEED * deltaTime;
+        this.x += moveX;
+        this.y += moveY;
+
+        if (currentHouse && this.y < currentHouse.y + 50) {
+            this.y = currentHouse.y + 50;
+        }
+
+        this.element.src = dx > 0 ? bearSprites.right : bearSprites.left;
+        this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+        this.updateHpBar();
+    }
+
+    attackHouse(house) {
+        if (this.isAttacking || this.isDying) return;
+        this.isAttacking = true;
+        this.element.src = bearSprites.attack;
+        playSound(bearAttackSound);
+        
+        setTimeout(() => {
+            if (house) house.takeDamage(BEAR_DAMAGE);
+        }, 200); // Damage applies mid-animation
+
+        setTimeout(() => {
+            this.isAttacking = false;
+            if (this.isDying) return;
+            this.element.src = this.x > (GAME_DIMENSIONS.width / 2) ? bearSprites.left : bearSprites.right;
+        }, 1200); // Duration of attack animation
+    }
+    
+    attackAnimal(animal) {
+        if (this.isAttacking || this.isDying) return;
+        this.isAttacking = true;
+        this.element.src = bearSprites.attack;
+        playSound(bearAttackSound);
+        
+        setTimeout(() => {
+            if (animal && !animal.isScared) {
+                animal.element.remove();
+                
+                let animalArrays = [sheep, chickens, cows, pigs];
+                for (let arr of animalArrays) {
+                    const index = arr.indexOf(animal);
+                    if (index > -1) {
+                        arr.splice(index, 1);
+                        break;
+                    }
+                }
+
+                if (sheep.length === 0 && chickens.length === 0 && cows.length === 0 && pigs.length === 0) {
+                    gameOver();
+                }
+            }
+        }, 500);
+
+        setTimeout(() => {
+            this.isAttacking = false;
+            this.targetAnimal = null; // Find new target after killing
+            if (this.isDying) return;
+        }, 1200);
     }
 }
 

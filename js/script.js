@@ -10,18 +10,22 @@ const MAX_WAIT_TIME = 5000;
 const EAT_RADIUS = 20;
 const WALKABLE_TOP_RATIO = 0.55;
 const EAT_ANIMATION_DURATION = 500;
-const WOLF_BASE_SPAWN_CHANCE = 0.08;
-const WOLF_SPEED = 55;
-const FOX_BASE_SPAWN_CHANCE = 0.40;
-const FOX_SPEED = 60;
 const HOUSE_BASE_HEALTH = 100;
 const BASE_ANIMAL_CAPACITY = 3;
 const CHICKEN_BASE_EGG_CHANCE = 0.1;
-const TROUGH_BASE_CAPACITY = 100; // Базовая емкость кормушки
+const TROUGH_BASE_CAPACITY = 100;
 const PIG_EAT_AMOUNT = 25; 
-const PIG_BASE_MEAT_CHANCE = 0.4; // Базовый шанс выпадения мяса
+const PIG_BASE_MEAT_CHANCE = 0.4;
 
-// --- НАСТРОЙКИ ВРЕМЕНИ СУТОК (НОЧИ УСКОРЕНЫ НА 20%) ---
+// --- НАСТРОЙКИ ВРАГОВ ---
+const WOLF_SPEED = 55;
+const FOX_SPEED = 60;
+const BEAR_SPEED = 30;
+const BEAR_HEALTH = 6;
+const BEAR_DAMAGE = 25;
+
+
+// --- НАСТРОЙКИ ВРЕМЕНИ СУТОК ---
 const CYCLE_STAGES = [
     { name: "Day 1", frameIndex: 0, duration: 120000, isNight: false }, 
     { name: "Day 2", frameIndex: 1, duration: 60000, isNight: false },
@@ -55,16 +59,25 @@ const foxSound = document.getElementById('fox-sound');
 const chickenAmbientSound = document.getElementById('chicken-ambient-sound');
 const cowAmbientSound = document.getElementById('cow-ambient-sound');
 const clickSound = document.getElementById('click-sound');
+const bearSound = document.getElementById('bear-sound');
+const bearAttackSound = document.getElementById('bear-attack-sound');
+const bearDamageSound = document.getElementById('bear-damage-sound');
+const damageHouseSound = document.getElementById('damage-house-sound');
+
 const woolAmountSpan = document.getElementById('wool-amount');
 const skinAmountSpan = document.getElementById('skin-amount');
 const eggAmountSpan = document.getElementById('egg-amount');
 const milkAmountSpan = document.getElementById('milk-amount');
 const meatAmountSpan = document.getElementById('meat-amount');
 const foxSkinAmountSpan = document.getElementById('fox-skin-amount');
+const bearSkinAmountSpan = document.getElementById('bear-skin-amount');
 const goldAmountSpan = document.getElementById('gold-amount');
 const grassSeedAmountSpan = document.getElementById('grass-seed-amount');
 const haySeedAmountSpan = document.getElementById('hay-seed-amount');
 const pigFoodAmountSpan = document.getElementById('pig-food-amount');
+const woodAmountSpan = document.getElementById('wood-amount');
+const brickAmountSpan = document.getElementById('brick-amount');
+
 const grassButton = document.getElementById('grass-button');
 const hayButton = document.getElementById('hay-button');
 const troughButton = document.getElementById('trough-button');
@@ -98,6 +111,7 @@ const godButton = document.getElementById('god-button');
 const sheepSprites = { front: 'images/sheep/sheep_front.png', back: 'images/sheep/sheep_back.png', left: 'images/sheep/sheep_left.png', right: 'images/sheep/sheep_right.png', eat: 'images/sheep/sheep_eat.png' };
 const wolfSprites = { front: 'images/wolf/wolf_front.png', back: 'images/wolf/wolf_back.png', left: 'images/wolf/wolf_left.png', right: 'images/wolf/wolf_right.png', attack: 'images/wolf/wolf_atack.png' };
 const foxSprites = { left: 'images/fox/fox_left.png', right: 'images/fox/fox_right.png', attack: 'images/fox/fox_attack.png', up: 'images/fox/fox_up.png' };
+const bearSprites = { left: 'images/bear/bear_left.png', right: 'images/bear/bear_right.png', attack: 'images/bear/bear_attack.png', damage: 'images/bear/bear_damage.png'};
 const chickenSprites = { front: 'images/chicken/chicken_top.png', back: 'images/chicken/chicken_back.png', left: 'images/chicken/chicken_left.png', right: 'images/chicken/chicken_right.png', eat: 'images/chicken/chicken_eat.png' };
 const cowSprites = { front: 'images/cow/cow_top.png', back: 'images/cow/cow_back.png', left: 'images/cow/cow_left.png', right: 'images/cow/cow_right.png', eat: 'images/cow/cow_eat.png' };
 const pigSprites = { front: 'images/pig/pig_top.png', back: 'images/pig/pig_back.png', left: 'images/pig/pig_left.png', right: 'images/pig/pig_right.png', eat: 'images/pig/pig_eat.png' };
@@ -106,6 +120,9 @@ const CLOUD_SPRITES = ['images/clouds/cloud_1.png', 'images/clouds/cloud_2.png',
 const LOCATION_FRAMES = [ 'images/location/day_1.png','images/location/day_2.png','images/location/day_3.png','images/location/day_4.png','images/location/day_5.png','images/location/day_6.png','images/location/day_7.png','images/location/day_8.png' ];
 const HOUSE_SPRITES = { house_1: 'images/house/house_1.png', house_2: 'images/house/house_2.png', house_3: 'images/house/house_3.png', house_4: 'images/house/house_4.png' };
 const HAY_SPRITES = ['images/icons/rostock_small.png', 'images/icons/rostock_sredny.png', 'images/icons/rostock_ready.png'];
+const FOREST_SPRITES = ['images/forest/forest_1.png', 'images/forest/forest_2.png', 'images/forest/forest_3.png', 'images/forest/forest_4.png'];
+const ROCK_SPRITES = ['images/rock/rock_1.png', 'images/rock/rock_2.png', 'images/rock/rock_3.png', 'images/rock/rock_4.png'];
+
 const MILK_ICON_SRC = 'images/icons/milk.png';
 const GRASS_ICON_SRC = 'images/icons/grass_icon.png';
 const REPAIR_ICON_SRC = 'images/icons/repair_icon.png';
@@ -115,32 +132,35 @@ const MEAT_ICON_SRC = 'images/pig/meat.png';
 const PIGGY_FOOD_ICON_SRC = 'images/pig/piggy_food.png';
 const TROUGH_ICON_SRC = 'images/pig/trough_topN.png';
 const FOX_SKIN_SRC = 'images/fox/fox_skin.png';
+const BEAR_SKIN_SRC = 'images/bear/bear_skin.png';
 const CALCULATOR_ICON_SRC = 'images/icons/calculator_icon.png';
 const GOLD_ICON_SRC = 'images/gold/gold.png';
+const WOOD_ICON_SRC = 'images/tree/tree.png';
+const BRICK_ICON_SRC = 'images/brick/brick.png';
 const SETTINGS_ICON_SRC = 'images/icons/settings.png';
 const GRANDFATHER_SRC = 'images/grandfather/grandfather.png';
 
 
-// --- МАССИВ РЕСУРСОВ ДЛЯ ПРЕДЗАГРУЗКИ (ТОЛЬКО ГРАФИКА) ---
+// --- МАССИВ РЕСУРСОВ ДЛЯ ПРЕДЗАГРУЗКИ ---
 const ASSETS_TO_LOAD = [
-    ...Object.values(sheepSprites), ...Object.values(wolfSprites), ...Object.values(chickenSprites), ...Object.values(cowSprites), ...Object.values(pigSprites), ...Object.values(troughSprites), ...Object.values(foxSprites),
-    ...CLOUD_SPRITES, ...LOCATION_FRAMES, ...Object.values(HOUSE_SPRITES), ...HAY_SPRITES,
-    'images/grass/grass.png', 'images/ground/ground.png', 'images/wool/wool.png', 'images/skin/skin.png', EGG_ICON_SRC, MILK_ICON_SRC, MEAT_ICON_SRC, PIGGY_FOOD_ICON_SRC, FOX_SKIN_SRC,
+    ...Object.values(sheepSprites), ...Object.values(wolfSprites), ...Object.values(chickenSprites), ...Object.values(cowSprites), ...Object.values(pigSprites), ...Object.values(troughSprites), ...Object.values(foxSprites), ...Object.values(bearSprites),
+    ...CLOUD_SPRITES, ...LOCATION_FRAMES, ...Object.values(HOUSE_SPRITES), ...HAY_SPRITES, ...FOREST_SPRITES, ...ROCK_SPRITES,
+    'images/grass/grass.png', 'images/ground/ground.png', 'images/wool/wool.png', 'images/skin/skin.png', EGG_ICON_SRC, MILK_ICON_SRC, MEAT_ICON_SRC, PIGGY_FOOD_ICON_SRC, FOX_SKIN_SRC, BEAR_SKIN_SRC,
     'images/shop/shop.png', 'images/shop/shop_menu.png', GRANDFATHER_SRC,
-    GOLD_ICON_SRC, 'images/tree/tree.png', 'images/brick/brick.png',
+    GOLD_ICON_SRC, WOOD_ICON_SRC, BRICK_ICON_SRC,
     GRASS_ICON_SRC, REPAIR_ICON_SRC, INVENTORY_ICON_SRC, CALCULATOR_ICON_SRC, SETTINGS_ICON_SRC, TROUGH_ICON_SRC
 ];
 
 // --- ХРАНИЛИЩЕ ОБЪЕКТОВ И СОСТОЯНИЙ ---
-let sheep = [], chickens = [], cows = [], pigs = [], wolves = [], clouds = [], grassPatches = [], hayPatches = [], troughs = [], foxes = [];
+let sheep = [], chickens = [], cows = [], pigs = [], wolves = [], clouds = [], grassPatches = [], hayPatches = [], troughs = [], foxes = [], bears = [];
 let currentHouse = null;
+let forestArea = null, rockArea = null;
 let woodCount = 10, brickCount = 0;
-let woolCount = 0, skinCount = 0, eggCount = 0, milkCount = 0, meatCount = 0, goldCount = 30, grassSeedCount = 0, haySeedCount = 0, pigFoodCount = 0, troughToPlace = 0, foxSkinCount = 0;
+let woolCount = 0, skinCount = 0, eggCount = 0, milkCount = 0, meatCount = 0, goldCount = 30, grassSeedCount = 5, haySeedCount = 0, pigFoodCount = 0, troughToPlace = 0, foxSkinCount = 0, bearSkinCount = 0;
 let activeBgLayer = bg1, hiddenBgLayer = bg2;
 let currentStageIndex = 0, cycleDirection = 1;
 let isMusicStarted = false, isPaused = false, isDialogueActive = false;
 let currentTool = 'grass';
-let wolfSpawnChance = WOLF_BASE_SPAWN_CHANCE;
 let GAME_DIMENSIONS = null;
 let sheepLevel = 1, chickenLevel = 1, cowLevel = 1, pigLevel = 1, troughLevel = 1, woolPerSheep = 1, eggChance = CHICKEN_BASE_EGG_CHANCE;
 let maxAnimals = BASE_ANIMAL_CAPACITY;
@@ -153,121 +173,54 @@ let isSoundMuted = false, isMusicMuted = false, currentLanguage = 'rus';
 
 // --- ИНИЦИАЛИЗАЦИЯ ГРОМКОСТИ ---
 function setInitialVolumes() {
-    backgroundMelody.volume = 0.4;
-    daySound.volume = 0.3; 
-    nightSong.volume = 0.3; 
-    sheepSound.volume = 0.16;
-    plantSound.volume = 0.25; 
-    eatSound.volume = 0.25; 
-    wolfAttackSound.volume = 0.6; 
-    wolfDeadSound.volume = 0.6; 
-    chickenSound.volume = 0.5; 
-    chickenAmbientSound.volume = 0.13;
-    cowAmbientSound.volume = 0.16;
-    clickSound.volume = 0.5;
-    foxSound.volume = 0.6;
+    backgroundMelody.volume = 0.4; daySound.volume = 0.3; nightSong.volume = 0.3; sheepSound.volume = 0.16;
+    plantSound.volume = 0.25; eatSound.volume = 0.25; wolfAttackSound.volume = 0.6; wolfDeadSound.volume = 0.6;
+    chickenSound.volume = 0.5; chickenAmbientSound.volume = 0.13; cowAmbientSound.volume = 0.16; clickSound.volume = 0.5;
+    foxSound.volume = 0.6; bearSound.volume = 0.7; bearAttackSound.volume = 0.7; bearDamageSound.volume = 0.8; damageHouseSound.volume = 0.8;
 }
 setInitialVolumes();
 
 // --- ПЕРЕВОД ---
 const translations = {
     'rus': {
-        loading: 'ЗАГРУЗКА',
-        shop_house_title: 'Дом',
-        shop_house1_name: 'Дом 1 (+5 мест)',
-        shop_house2_name: 'Дом 2 (+7 мест)',
-        shop_house3_name: 'Дом 3 (+10 мест)',
-        shop_house4_name: 'Дом 4 (+15 мест)',
-        shop_upgrades_title: 'Улучшения',
-        shop_upgrade_sheep_lvl: 'Улучшить Овцу (Ур. {level})',
-        shop_upgrade_cow_lvl: 'Улучшить Корову (Ур. {level})',
-        shop_upgrade_chicken_lvl: 'Улучшить Курицу (Ур. {level})',
-        shop_upgrade_pig_lvl: 'Улучшить Свинью (Ур. {level})',
-        shop_upgrade_trough_lvl: 'Улучшить Кормушку (Ур. {level})',
-        shop_upgrade_autofarm_lvl: 'Авто-Фарм (Ур. {level})',
-        shop_upgrade_clickfarm_lvl: 'Клик-Фарм (Ур. {level})',
-        shop_buy_title: 'Купить',
-        shop_buy_animals: 'Животные',
-        shop_buy_food: 'Еда',
-        shop_buy_materials: 'Материалы',
-        shop_buy_hammer: 'Купить Молот',
-        shop_buy_pig: 'Купить Свинью',
-        shop_buy_cow: 'Купить Корову',
-        shop_buy_sheep: 'Купить Овцу',
-        shop_buy_chicken: 'Купить Курицу',
-        shop_buy_trough: 'Купить Кормушку',
-        shop_buy_piggy_food: 'Еда для свиней (x1)',
-        shop_buy_grass_seed: 'Семена травы (x10)',
-        shop_buy_hay_seed: 'Семена сена (x10)',
-        shop_buy_wood: 'Купить Дерево',
-        shop_buy_brick: 'Купить Кирпич',
-        shop_sell_title: 'Продать',
-        shop_sell_all: 'Продать Всё',
-        game_over_title: 'ИГРА ОКОНЧЕНА',
-        game_over_subtitle: 'Всех ваших животных украли!',
-        game_over_restart: 'Начать заново',
-        settings_title: 'Настройки',
-        settings_sound: 'Звук',
-        settings_music: 'Музыка',
-        settings_language: 'Язык',
-        settings_close: 'Закрыть',
-        on: 'ВКЛ',
-        off: 'ВЫКЛ',
+        loading: 'ЗАГРУЗКА', shop_house_title: 'Дом', shop_house1_name: 'Дом 1 (+5 мест)',
+        shop_house2_name: 'Дом 2 (+7 мест)', shop_house3_name: 'Дом 3 (+10 мест)', shop_house4_name: 'Дом 4 (+15 мест)',
+        shop_upgrades_title: 'Улучшения', shop_upgrade_forest_lvl: 'Улучшить Лес (Ур. {level})', shop_upgrade_rock_lvl: 'Улучшить Карьер (Ур. {level})',
+        shop_upgrade_sheep_lvl: 'Улучшить Овцу (Ур. {level})', shop_upgrade_cow_lvl: 'Улучшить Корову (Ур. {level})',
+        shop_upgrade_chicken_lvl: 'Улучшить Курицу (Ур. {level})', shop_upgrade_pig_lvl: 'Улучшить Свинью (Ур. {level})',
+        shop_upgrade_trough_lvl: 'Улучшить Кормушку (Ур. {level})', shop_upgrade_autofarm_lvl: 'Авто-Фарм (Ур. {level})',
+        shop_upgrade_clickfarm_lvl: 'Клик-Фарм (Ур. {level})', shop_buy_title: 'Купить', shop_buy_animals: 'Животные',
+        shop_buy_food: 'Еда', shop_buy_materials: 'Материалы', shop_buy_hammer: 'Купить Молот',
+        shop_buy_pig: 'Купить Свинью', shop_buy_cow: 'Купить Корову', shop_buy_sheep: 'Купить Овцу',
+        shop_buy_chicken: 'Купить Курицу', shop_buy_trough: 'Купить Кормушку', shop_buy_piggy_food: 'Еда для свиней (x1)',
+        shop_buy_grass_seed: 'Семена травы (x10)', shop_buy_hay_seed: 'Семена сена (x10)',
+        shop_sell_all: 'Продать Всё', game_over_title: 'ИГРА ОКОНЧЕНА', game_over_subtitle: 'Всех ваших животных украли!',
+        game_over_restart: 'Начать заново', settings_title: 'Настройки', settings_sound: 'Звук',
+        settings_music: 'Музыка', settings_language: 'Язык', settings_close: 'Закрыть', on: 'ВКЛ', off: 'ВЫКЛ',
         grandfather_dialogue: 'Ну здравствуй, молодой! Купил землю... с одной курицей?! Ха-ха, фермер от бога!\nСмотри в оба — твари тут свирепые. Загляни в магазин, а то долго не протянешь.',
-        dialogue_continue: 'Продолжить',
-        no_seeds: 'Нечего сажать, загляни в магазин',
-        no_food: 'Нет еды, загляни в магазин',
-        cant_place_here: 'Здесь нельзя ставить!',
-        no_item: 'Предмет закончился'
+        dialogue_continue: 'Продолжить', no_seeds: 'Нечего сажать, загляни в магазин', no_food: 'Нет еды, загляни в магазин',
+        cant_place_here: 'Здесь нельзя ставить!', no_item: 'Предмет закончился', need_house_lvl_1: 'Нужно построить дом',
+        need_house_lvl_3: 'Нужен дом 3-го уровня'
     },
     'eng': {
-        loading: 'LOADING',
-        shop_house_title: 'House',
-        shop_house1_name: 'House 1 (+5 capacity)',
-        shop_house2_name: 'House 2 (+7 capacity)',
-        shop_house3_name: 'House 3 (+10 capacity)',
-        shop_house4_name: 'House 4 (+15 capacity)',
-        shop_upgrades_title: 'Upgrades',
-        shop_upgrade_sheep_lvl: 'Upgrade Sheep (Lvl {level})',
-        shop_upgrade_cow_lvl: 'Upgrade Cow (Lvl {level})',
-        shop_upgrade_chicken_lvl: 'Upgrade Chicken (Lvl {level})',
-        shop_upgrade_pig_lvl: 'Upgrade Pig (Lvl {level})',
-        shop_upgrade_trough_lvl: 'Upgrade Trough (Lvl {level})',
-        shop_upgrade_autofarm_lvl: 'Auto-Farm (Lvl {level})',
-        shop_upgrade_clickfarm_lvl: 'Click-Farm (Lvl {level})',
-        shop_buy_title: 'Buy',
-        shop_buy_animals: 'Animals',
-        shop_buy_food: 'Food',
-        shop_buy_materials: 'Materials',
-        shop_buy_hammer: 'Buy Hammer',
-        shop_buy_pig: 'Buy Pig',
-        shop_buy_cow: 'Buy Cow',
-        shop_buy_sheep: 'Buy Sheep',
-        shop_buy_chicken: 'Buy Chicken',
-        shop_buy_trough: 'Buy Trough',
-        shop_buy_piggy_food: 'Piggy Food (x1)',
-        shop_buy_grass_seed: 'Grass Seeds (x10)',
-        shop_buy_hay_seed: 'Hay Seeds (x10)',
-        shop_buy_wood: 'Buy Wood',
-        shop_buy_brick: 'Buy Brick',
-        shop_sell_title: 'Sell',
-        shop_sell_all: 'Sell All',
-        game_over_title: 'GAME OVER',
-        game_over_subtitle: 'All your animals have been stolen!',
-        game_over_restart: 'Restart',
-        settings_title: 'Settings',
-        settings_sound: 'Sound',
-        settings_music: 'Music',
-        settings_language: 'Language',
-        settings_close: 'Close',
-        on: 'ON',
-        off: 'OFF',
+        loading: 'LOADING', shop_house_title: 'House', shop_house1_name: 'House 1 (+5 capacity)',
+        shop_house2_name: 'House 2 (+7 capacity)', shop_house3_name: 'House 3 (+10 capacity)', shop_house4_name: 'House 4 (+15 capacity)',
+        shop_upgrades_title: 'Upgrades', shop_upgrade_forest_lvl: 'Upgrade Forest (Lvl {level})', shop_upgrade_rock_lvl: 'Upgrade Quarry (Lvl {level})',
+        shop_upgrade_sheep_lvl: 'Upgrade Sheep (Lvl {level})', shop_upgrade_cow_lvl: 'Upgrade Cow (Lvl {level})',
+        shop_upgrade_chicken_lvl: 'Upgrade Chicken (Lvl {level})', shop_upgrade_pig_lvl: 'Upgrade Pig (Lvl {level})',
+        shop_upgrade_trough_lvl: 'Upgrade Trough (Lvl {level})', shop_upgrade_autofarm_lvl: 'Auto-Farm (Lvl {level})',
+        shop_upgrade_clickfarm_lvl: 'Click-Farm (Lvl {level})', shop_buy_title: 'Buy', shop_buy_animals: 'Animals',
+        shop_buy_food: 'Food', shop_buy_materials: 'Materials', shop_buy_hammer: 'Buy Hammer',
+        shop_buy_pig: 'Buy Pig', shop_buy_cow: 'Buy Cow', shop_buy_sheep: 'Buy Sheep',
+        shop_buy_chicken: 'Buy Chicken', shop_buy_trough: 'Buy Trough', shop_buy_piggy_food: 'Piggy Food (x1)',
+        shop_buy_grass_seed: 'Grass Seeds (x10)', shop_buy_hay_seed: 'Hay Seeds (x10)',
+        shop_sell_all: 'Sell All', game_over_title: 'GAME OVER', game_over_subtitle: 'All your animals have been stolen!',
+        game_over_restart: 'Restart', settings_title: 'Settings', settings_sound: 'Sound',
+        settings_music: 'Music', settings_language: 'Language', settings_close: 'Close', on: 'ON', off: 'OFF',
         grandfather_dialogue: "Well hello, young one! Bought some land... with a single chicken?! Ha-ha, a natural farmer!\nWatch your back - the beasts here are fierce. Visit the shop, or you won't last long.",
-        dialogue_continue: 'Continue',
-        no_seeds: 'Nothing to plant, check the shop',
-        no_food: 'No food, check the shop',
-        cant_place_here: 'Cannot place here!',
-        no_item: 'Item is out of stock'
+        dialogue_continue: 'Continue', no_seeds: 'Nothing to plant, check the shop', no_food: 'No food, check the shop',
+        cant_place_here: 'Cannot place here!', no_item: 'Item is out of stock', need_house_lvl_1: 'Build a house first',
+        need_house_lvl_3: 'Requires House Level 3'
     }
 };
 
@@ -292,14 +245,12 @@ function translateUI() {
         const key = el.dataset.translateKey;
         if (lang[key]) {
              if (el.id !== 'dialogue-text') {
-                  // Для обычных кнопок и текста
-                 if(el.childNodes.length > 0 && el.childNodes[0].nodeType === Node.TEXT_NODE) {
+                if(el.childNodes.length > 0 && el.childNodes[0].nodeType === Node.TEXT_NODE) {
                      el.childNodes[0].nodeValue = lang[key];
-                 } 
-                 // Для кнопок внутри которых span (вкладки магазина)
-                 else if (el.querySelector('span')) {
-                      el.querySelector('span').textContent = lang[key];
-                 }
+                } 
+                else if (el.querySelector('span')) {
+                     el.querySelector('span').textContent = lang[key];
+                }
             }
         }
     });
@@ -324,16 +275,11 @@ function isPointBlocked(px, py) {
 function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
 function playSound(soundElement) { if (soundElement && !isSoundMuted) { soundElement.currentTime = 0; soundElement.play().catch(e => {}); } }
 function updateResourceCounters() {
-    woolAmountSpan.textContent = woolCount;
-    skinAmountSpan.textContent = skinCount;
-    eggAmountSpan.textContent = eggCount;
-    milkAmountSpan.textContent = milkCount;
-    meatAmountSpan.textContent = meatCount;
-    foxSkinAmountSpan.textContent = foxSkinCount;
-    goldAmountSpan.textContent = Math.floor(goldCount);
-    grassSeedAmountSpan.textContent = grassSeedCount;
-    haySeedAmountSpan.textContent = haySeedCount;
-    pigFoodAmountSpan.textContent = pigFoodCount;
+    woolAmountSpan.textContent = woolCount; skinAmountSpan.textContent = skinCount; eggAmountSpan.textContent = eggCount;
+    milkAmountSpan.textContent = milkCount; meatAmountSpan.textContent = meatCount; foxSkinAmountSpan.textContent = foxSkinCount;
+    bearSkinAmountSpan.textContent = bearSkinCount; goldAmountSpan.textContent = Math.floor(goldCount);
+    grassSeedAmountSpan.textContent = grassSeedCount; haySeedAmountSpan.textContent = haySeedCount;
+    pigFoodAmountSpan.textContent = pigFoodCount; woodAmountSpan.textContent = woodCount; brickAmountSpan.textContent = brickCount;
 }
 
 function showPlayerMessage(messageKey) {
@@ -350,11 +296,11 @@ function spawnHay(px, py) { if(haySeedCount <= 0) { showPlayerMessage('no_seeds'
 function spawnWool(px, py, amount = 1) { woolCount += amount; updateResourceCounters(); const el = document.createElement('img'); el.src = 'images/wool/wool.png'; el.className = 'wool-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'wool-counter'); }
 function spawnSkin(px, py) { skinCount++; updateResourceCounters(); const el = document.createElement('img'); el.src = 'images/skin/skin.png'; el.className = 'skin-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'skin-counter'); }
 function spawnFoxSkin(px, py) { foxSkinCount++; updateResourceCounters(); const el = document.createElement('img'); el.src = FOX_SKIN_SRC; el.className = 'fox-skin-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'fox-skin-counter'); }
+function spawnBearSkin(px, py) { bearSkinCount++; updateResourceCounters(); const el = document.createElement('img'); el.src = BEAR_SKIN_SRC; el.className = 'bear-skin-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'bear-skin-counter'); }
 function spawnEgg(px, py) { eggCount++; updateResourceCounters(); const el = document.createElement('img'); el.src = EGG_ICON_SRC; el.className = 'egg-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'egg-counter'); }
 function spawnMilk(px, py) { milkCount++; updateResourceCounters(); const el = document.createElement('img'); el.src = MILK_ICON_SRC; el.className = 'milk-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'milk-counter'); }
 function spawnMeat(px, py) { meatCount++; updateResourceCounters(); const el = document.createElement('img'); el.src = MEAT_ICON_SRC; el.className = 'meat-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'meat-counter'); }
-function spawnWolf() { if (isPaused || isDialogueActive) return; if (Math.random() < wolfSpawnChance) { wolves.push(new Wolf()); } }
-function spawnFox() { if (isPaused || isDialogueActive) return; if (Math.random() < FOX_BASE_SPAWN_CHANCE) { foxes.push(new Fox()); } }
+
 function spawnFlyingCoin(startX, startY) { const coin = document.createElement('img'); coin.src = GOLD_ICON_SRC; coin.className = 'flying-coin'; coin.style.transform = `translate(${startX}px, ${startY}px)`; coin.style.visibility = 'visible'; gameWorld.appendChild(coin); animateResourceToUI(coin, 'gold-counter'); }
 function animateResourceToUI(element, targetCounterId) {
     let coords = uiTargetCoordsCache[targetCounterId];
@@ -386,18 +332,14 @@ function animateResourceToUI(element, targetCounterId) {
 // --- УПРАВЛЕНИЕ МУЗЫКОЙ И ФОНОМ ---
 function updateMusicState(isNight) {
     if (isMusicMuted || !isMusicStarted) {
-        backgroundMelody.pause();
-        daySound.pause();
-        nightSong.pause();
+        backgroundMelody.pause(); daySound.pause(); nightSong.pause();
         return;
     }
     backgroundMelody.play().catch(e => {});
     if (isNight) { 
-        daySound.pause(); 
-        nightSong.play().catch(e => {}); 
+        daySound.pause(); nightSong.play().catch(e => {}); 
     } else { 
-        nightSong.pause(); 
-        daySound.play().catch(e => {}); 
+        nightSong.pause(); daySound.play().catch(e => {}); 
     }
 }
 
@@ -410,7 +352,7 @@ function updateBackground(stage) {
     
     clouds.forEach(cloud => cloud.element.classList.toggle('night', stage.isNight));
 
-    if (!stage.isNight) { // Животные выходят
+    if (!stage.isNight) {
         [...sheep, ...chickens, ...cows, ...pigs].forEach(animal => {
             if (animal.isHiding) {
                 animal.isHiding = false;
@@ -419,13 +361,6 @@ function updateBackground(stage) {
             }
         });
     }
-    
-    let baseChance = WOLF_BASE_SPAWN_CHANCE;
-    if (stage.isNight) {
-        let nightNumber = stage.frameIndex - 3;
-        baseChance *= (1 + nightNumber * 0.1);
-    }
-    wolfSpawnChance = baseChance;
 }
 
 function runNextStage() { 
@@ -446,16 +381,14 @@ function updateInventoryButtons() {
     grassButton.classList.toggle('hidden', grassSeedCount <= 0);
     hayButton.classList.toggle('hidden', haySeedCount <= 0);
 
-    // Если активный инструмент закончился, переключаемся на другой доступный
     if (document.querySelector('.tool-button.active.hidden')) {
         const firstVisibleButton = document.querySelector('#action-buttons-panel .tool-button:not(.hidden)');
         if (firstVisibleButton) {
             firstVisibleButton.click();
         } else {
-            // Если вообще нет инструментов, убираем активность со всех
-             document.querySelectorAll('.tool-button.active').forEach(b => b.classList.remove('active'));
-             currentTool = null;
-             document.body.style.cursor = 'default';
+            document.querySelectorAll('.tool-button.active').forEach(b => b.classList.remove('active'));
+            currentTool = null;
+            document.body.style.cursor = 'default';
         }
     }
 }
@@ -479,6 +412,16 @@ function updateShopUI() {
     if (capacityInfo) capacityInfo.textContent = `${totalAnimals}/${maxAnimals}`;
 
     // --- Обновление улучшений ---
+    const upgradeForestButton = document.getElementById('upgrade-forest-button');
+    upgradeForestButton.dataset.costGold = Math.ceil(100 * Math.pow(1.8, forestArea.level - 1));
+    upgradeForestButton.querySelector('.item-name').textContent = lang.shop_upgrade_forest_lvl.replace('{level}', forestArea.level + 1);
+    upgradeForestButton.querySelector('.cost-resource').innerHTML = `<img src="images/gold/gold.png" alt="gold"> ${upgradeForestButton.dataset.costGold}`;
+
+    const upgradeRockButton = document.getElementById('upgrade-rock-button');
+    upgradeRockButton.dataset.costGold = Math.ceil(200 * Math.pow(2, rockArea.level - 1));
+    upgradeRockButton.querySelector('.item-name').textContent = lang.shop_upgrade_rock_lvl.replace('{level}', rockArea.level + 1);
+    upgradeRockButton.querySelector('.cost-resource').innerHTML = `<img src="images/gold/gold.png" alt="gold"> ${upgradeRockButton.dataset.costGold}`;
+
     const upgradePigButton = document.getElementById('upgrade-pig-button');
     upgradePigButton.dataset.costGold = Math.ceil(180 * Math.pow(2.2, pigLevel - 1));
     upgradePigButton.querySelector('.item-name').textContent = lang.shop_upgrade_pig_lvl.replace('{level}', pigLevel + 1);
@@ -553,7 +496,9 @@ function handleShopTransaction(event) {
     let purchaseSuccess = false;
     const totalAnimals = sheep.length + chickens.length + cows.length + pigs.length;
 
-    if (item === 'upgrade_pig') { if (goldCount >= costGold) { goldCount -= costGold; pigLevel++; purchaseSuccess = true; }
+    if (item === 'upgrade_forest') { if (goldCount >= costGold) { goldCount -= costGold; forestArea.upgrade(); purchaseSuccess = true; }
+    } else if (item === 'upgrade_rock') { if (goldCount >= costGold) { goldCount -= costGold; rockArea.upgrade(); purchaseSuccess = true; }
+    } else if (item === 'upgrade_pig') { if (goldCount >= costGold) { goldCount -= costGold; pigLevel++; purchaseSuccess = true; }
     } else if (item === 'upgrade_trough') { if (goldCount >= costGold) { goldCount -= costGold; troughLevel++; troughs.forEach(t => t.upgrade()); purchaseSuccess = true; }
     } else if (item === 'upgrade_sheep') { if (goldCount >= costGold) { goldCount -= costGold; sheepLevel++; woolPerSheep++; purchaseSuccess = true; }
     } else if (item === 'upgrade_cow') { if (goldCount >= costGold) { goldCount -= costGold; cowLevel++; purchaseSuccess = true; }
@@ -572,14 +517,12 @@ function handleShopTransaction(event) {
         currentHouse = new House(item, capacity, oldAutoFarmLvl, oldClickFarmLvl); 
         purchaseSuccess = true; 
     }
-    } else if (item === 'buy_wood') { if (goldCount >= costGold) { goldCount -= costGold; woodCount++; purchaseSuccess = true; }
-    } else if (item === 'buy_brick') { if (goldCount >= costGold) { goldCount -= costGold; brickCount++; purchaseSuccess = true; }
     } else if (item === 'buy_grass_seed') { if (goldCount >= costGold) { goldCount -= costGold; grassSeedCount += 10; purchaseSuccess = true; }
     } else if (item === 'buy_hay_seed') { if (goldCount >= costGold) { goldCount -= costGold; haySeedCount += 10; purchaseSuccess = true; }
     } else if (item === 'buy_trough') { if (goldCount >= costGold) { goldCount -= costGold; troughToPlace++; purchaseSuccess = true; }
     } else if (item === 'buy_piggy_food') { if (goldCount >= costGold) { goldCount -= costGold; pigFoodCount++; purchaseSuccess = true; }
     } else if (item === 'buy_hammer') { if (goldCount >= costGold && !hasRepairHammer) { goldCount -= costGold; hasRepairHammer = true; purchaseSuccess = true; }
-    } else if (item === 'sell_all') { let totalGain = (meatCount * 25) + (milkCount * 15) + (woolCount * 7) + (skinCount * 10) + (eggCount * 3) + (foxSkinCount * 15); if (totalGain > 0) { goldCount += totalGain; meatCount = 0; milkCount = 0; woolCount = 0; skinCount = 0; eggCount = 0; foxSkinCount = 0; purchaseSuccess = true; } }
+    } else if (item === 'sell_all') { let totalGain = (woodCount * 2) + (brickCount * 5) + (meatCount * 25) + (milkCount * 15) + (woolCount * 7) + (skinCount * 10) + (eggCount * 3) + (foxSkinCount * 15) + (bearSkinCount * 50); if (totalGain > 0) { goldCount += totalGain; woodCount=0; brickCount=0; meatCount = 0; milkCount = 0; woolCount = 0; skinCount = 0; eggCount = 0; foxSkinCount = 0; bearSkinCount=0; purchaseSuccess = true; } }
 
     button.classList.add(purchaseSuccess ? 'purchase-success' : 'purchase-fail');
     setTimeout(() => { button.classList.remove('purchase-success', 'purchase-fail'); }, 500);
@@ -603,7 +546,7 @@ function startGame() {
         const deltaTime = (currentTime - lastTime) / 1000; 
         lastTime = currentTime; 
         clouds.forEach(c => c.update(deltaTime));
-        [...sheep, ...chickens, ...cows, ...pigs, ...wolves, ...foxes].forEach(o => o.update(deltaTime)); 
+        [...sheep, ...chickens, ...cows, ...pigs, ...wolves, ...foxes, ...bears].forEach(o => o.update(deltaTime)); 
         
         if (currentHouse) {
             goldCount += currentHouse.autoFarmRate * deltaTime;
@@ -652,53 +595,84 @@ function startGame() {
                  }
             } else { showPlayerMessage('no_food'); }
         }
-        else if (currentTool === 'repair' && currentHouse) {
-            const houseRect = currentHouse.element.getBoundingClientRect();
-            if (event.clientX >= houseRect.left && event.clientX <= houseRect.right && event.clientY >= houseRect.top && event.clientY <= houseRect.bottom) {
-                currentHouse.repair();
-                hasRepairHammer = false;
-                updateInventoryButtons();
-                setActiveTool('grass');
-            }
-        }
     });
 
     setInterval(() => { if (!isPaused && sheep.length > 0) playSound(sheepSound); }, 7000 + Math.random() * 8000);
     setInterval(() => { if (!isPaused && chickens.length > 0) playSound(chickenAmbientSound); }, 5000 + Math.random() * 6000);
     setInterval(() => { if (!isPaused && cows.length > 0) playSound(cowAmbientSound); }, 8000 + Math.random() * 7000);
-    enemySpawner(); // Запускаем спавнер врагов
+    enemySpawner();
 }
 
-// Новая функция для спавна врагов с разной частотой
 function enemySpawner() {
     if (isPaused || isDialogueActive) {
-        setTimeout(enemySpawner, 1000); // Проверим через секунду, если игра на паузе
+        setTimeout(enemySpawner, 1000);
         return;
     }
 
-    // Попытка спавна
-    spawnWolf();
-    spawnFox();
-
     const stage = CYCLE_STAGES.find(s => s.frameIndex === (currentStageIndex > 0 ? currentStageIndex - 1 : 0)) || CYCLE_STAGES[0];
-    let minDelay, maxDelay;
-
+    const dayNumber = stage.frameIndex <= 3 ? stage.frameIndex + 1 : 8 - stage.frameIndex;
+    const difficultyModifier = 1 + (dayNumber - 1) * 0.1;
+    
+    let baseMinDelay = 7000, baseMaxDelay = 9000;
+    
     if (stage.isNight) {
-        // Пик ночи (самая темная стадия)
-        if (stage.frameIndex === 6) { 
-            minDelay = 2000; // 2 сек
-            maxDelay = 3000; // 3 сек
-        } else { // Начало и конец ночи
-            minDelay = 3000; // 3 сек
-            maxDelay = 4000; // 4 сек
-        }
-    } else { // День
-        minDelay = 5000; // 5 сек
-        maxDelay = 7000; // 7 сек
+        baseMinDelay = 4000;
+        baseMaxDelay = 6000;
     }
 
+    const minDelay = baseMinDelay / difficultyModifier;
+    const maxDelay = baseMaxDelay / difficultyModifier;
+
+    // Bear spawn logic
+    const isBearSeason = [5, 6, 7].includes(stage.frameIndex);
+    if (isBearSeason && bears.length === 0) {
+        if(Math.random() < 0.5) { // 50% chance to spawn a bear during its season if one isn't present
+             bears.push(new Bear());
+        }
+    }
+
+    // Wolf and Fox spawn logic
+    if (!isBearSeason) {
+        const rand = Math.random();
+        if (rand < 0.60) { // 60% Wolf
+            wolves.push(new Wolf());
+        } else { // 40% Fox
+            foxes.push(new Fox());
+        }
+
+        // Chance for a second enemy at night
+        if (stage.isNight && Math.random() < 0.3 * difficultyModifier) {
+             setTimeout(() => {
+                if (Math.random() < 0.60) wolves.push(new Wolf());
+                else foxes.push(new Fox());
+            }, 1000);
+        }
+    }
+    
     const nextSpawnTime = minDelay + Math.random() * (maxDelay - minDelay);
     setTimeout(enemySpawner, nextSpawnTime);
+}
+
+function setActiveTool(toolName) {
+    playSound(clickSound);
+    if (toolName === 'trough' && troughToPlace <= 0) { showPlayerMessage('no_item'); return; }
+    if (toolName === 'piggy_food' && pigFoodCount <= 0) { showPlayerMessage('no_item'); return; }
+    if (toolName === 'repair' && !hasRepairHammer) { showPlayerMessage('no_item'); return; }
+    
+    currentTool = toolName;
+    isPlacingTrough = (toolName === 'trough');
+    const cursorUrl = 
+        toolName === 'grass' ? GRASS_ICON_SRC : 
+        toolName === 'hay' ? HAY_SPRITES[0] : 
+        toolName === 'repair' ? REPAIR_ICON_SRC : 
+        toolName === 'trough' ? TROUGH_ICON_SRC :
+        toolName === 'piggy_food' ? PIGGY_FOOD_ICON_SRC :
+        GRASS_ICON_SRC;
+    document.body.style.cursor = `url('${cursorUrl}'), auto`;
+    
+    const toolButtons = { 'grass': grassButton, 'hay': hayButton, 'repair': repairButton, 'trough': troughButton, 'piggy_food': piggyFoodButton };
+    Object.values(toolButtons).forEach(btn => btn.classList.remove('active'));
+    if (toolButtons[toolName]) toolButtons[toolName].classList.add('active');
 }
 
 
@@ -707,7 +681,20 @@ function initializeGame() {
     loadingScreen.style.display = 'none';
     
     GAME_DIMENSIONS = gameWorld.getBoundingClientRect();
-    if (GAME_DIMENSIONS.width === 0) { console.error("Не удалось определить размеры игрового мира."); return; }
+    if (GAME_DIMENSIONS.width === 0) { console.error("Could not determine game world dimensions."); return; }
+
+    // Инициализация зон добычи
+    forestArea = new ResourceArea({
+        type: 'wood', containerId: 'forest-area', sprites: FOREST_SPRITES, requiredHouseLevel: 1,
+        messageKey: 'need_house_lvl_1', resourceIcon: WOOD_ICON_SRC, resourceCounterId: 'wood-counter',
+        addResource: (amount) => { woodCount += amount; updateResourceCounters(); }
+    });
+    rockArea = new ResourceArea({
+        type: 'brick', containerId: 'rock-area', sprites: ROCK_SPRITES, requiredHouseLevel: 3,
+        messageKey: 'need_house_lvl_3', resourceIcon: BRICK_ICON_SRC, resourceCounterId: 'brick-counter',
+        addResource: (amount) => { brickCount += amount; updateResourceCounters(); }
+    });
+
 
     updateResourceCounters();
     updateInventoryButtons();
@@ -732,30 +719,6 @@ function initializeGame() {
         dialogueContinueButton.classList.remove('hidden');
     });
     
-    const toolButtons = {
-        'grass': grassButton, 'hay': hayButton, 'repair': repairButton, 'trough': troughButton, 'piggy_food': piggyFoodButton
-    };
-
-    function setActiveTool(toolName) {
-        playSound(clickSound);
-        if (toolName === 'trough' && troughToPlace <= 0) { showPlayerMessage('no_item'); return; }
-        if (toolName === 'piggy_food' && pigFoodCount <= 0) { showPlayerMessage('no_item'); return; }
-        if (toolName === 'repair' && !hasRepairHammer) { showPlayerMessage('no_item'); return; }
-        
-        currentTool = toolName;
-        isPlacingTrough = (toolName === 'trough');
-        const cursorUrl = 
-            toolName === 'grass' ? GRASS_ICON_SRC : 
-            toolName === 'hay' ? HAY_SPRITES[0] : 
-            toolName === 'repair' ? REPAIR_ICON_SRC : 
-            toolName === 'trough' ? TROUGH_ICON_SRC :
-            toolName === 'piggy_food' ? PIGGY_FOOD_ICON_SRC :
-            GRASS_ICON_SRC;
-        document.body.style.cursor = `url('${cursorUrl}'), auto`;
-        Object.values(toolButtons).forEach(btn => btn.classList.remove('active'));
-        if (toolButtons[toolName]) toolButtons[toolName].classList.add('active');
-    }
-
     grassButton.addEventListener('click', () => setActiveTool('grass'));
     hayButton.addEventListener('click', () => setActiveTool('hay'));
     troughButton.addEventListener('click', () => setActiveTool('trough'));
@@ -826,7 +789,7 @@ function preloadAssets() {
     ASSETS_TO_LOAD.forEach(src => {
         const img = new Image();
         img.onload = assetLoaded;
-        img.onerror = () => { console.error(`Не удалось загрузить: ${src}`); assetLoaded(); };
+        img.onerror = () => { console.error(`Failed to load: ${src}`); assetLoaded(); };
         img.src = src;
     });
 }
@@ -839,7 +802,6 @@ window.addEventListener('load', () => {
         lastTouchEnd = now;
     }, false);
     if (gameWorld) { preloadAssets(); } 
-    else { console.error('Критическая ошибка: элемент #game-world не найден!'); }
+    else { console.error('Critical Error: #game-world element not found!'); }
 });
-
 

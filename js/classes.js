@@ -44,13 +44,18 @@ class House {
         
         this.layerThreshold = this.y + 60; 
 
-        this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+        // Set the base transform for positioning
+        this.element.style.setProperty('--x-pos', `${this.x}px`);
+        this.element.style.setProperty('--y-pos', `${this.y}px`);
+        this.element.style.transform = `translate(var(--x-pos), var(--y-pos))`;
+        
         this.element.style.visibility = 'visible';
         gameWorld.appendChild(this.element);
         
         this.health = HOUSE_BASE_HEALTH;
         this.capacity = capacity;
         maxAnimals = this.capacity;
+        this.level = parseInt(type.split('_')[1]);
 
         this.hpBarContainer = document.createElement('div');
         this.hpBarContainer.className = 'hp-bar-container';
@@ -68,12 +73,23 @@ class House {
     }
     
     updateFarmRates() {
-        this.autoFarmRate = 0.15 * this.autoFarmLevel; // Увеличено
-        this.clickFarmValue = 0.5 * this.clickFarmLevel; // Увеличено
+        this.autoFarmRate = 0.18 * this.autoFarmLevel; // +20% base income per level
+        this.clickFarmValue = 0.6 * this.clickFarmLevel; // +20% base income per level
     }
 
     handleClick(event) {
-        event.stopPropagation(); // <-- ДОБАВЛЕНО: Останавливаем "протекание" клика
+        event.stopPropagation();
+
+        if (currentTool === 'repair') {
+            if (hasRepairHammer) {
+                this.repair();
+                hasRepairHammer = false;
+                updateInventoryButtons();
+                setActiveTool('grass'); // Возвращаемся к инструменту по умолчанию
+            }
+            return; // Прерываем выполнение, чтобы не фармить монеты
+        }
+        
         if(isPaused) return;
         playSound(clickSound);
         goldCount += this.clickFarmValue;
@@ -85,15 +101,24 @@ class House {
 
     updateHpBar() {
         this.hpBar.style.width = `${(this.health / HOUSE_BASE_HEALTH) * 100}%`;
-        this.hpBarContainer.style.transform = `translate(${this.x + 25}px, ${this.y - 10}px)`;
+        const barX = this.x + (this.element.offsetWidth / 2) - 25;
+        const barY = this.y - 10;
+        this.hpBarContainer.style.transform = `translate(${barX}px, ${barY}px)`;
         this.hpBarContainer.style.visibility = 'visible';
+    }
+
+    showDamageEffect() {
+        this.element.classList.add('taking-damage-effect');
+        setTimeout(() => {
+            this.element.classList.remove('taking-damage-effect');
+        }, 150); // Duration of the effect in ms
     }
 
     takeDamage(amount) {
         this.health = Math.max(0, this.health - amount);
         this.updateHpBar();
-        this.element.classList.add('taking-damage');
-        setTimeout(() => this.element.classList.remove('taking-damage'), 100);
+        this.showDamageEffect();
+        playSound(damageHouseSound);
         if (this.health <= 0) {
             this.destroy();
         }
@@ -600,6 +625,10 @@ class Wolf {
         this.x += moveX;
         this.y += moveY;
 
+        if (currentHouse && this.y < currentHouse.y + 50) { // Не позволяет заходить за дом
+            this.y = currentHouse.y + 50;
+        }
+
         if (Math.abs(dx) > Math.abs(dy)) { this.element.src = dx > 0 ? wolfSprites.right : wolfSprites.left; } 
         else { this.element.src = dy > 0 ? wolfSprites.front : wolfSprites.back; }
         this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
@@ -609,7 +638,6 @@ class Wolf {
         if (this.isAttacking) return;
         this.isAttacking = true;
         this.element.src = wolfSprites.attack;
-        playSound(wolfAttackSound);
         house.takeDamage(10);
         setTimeout(() => { this.isAttacking = false; }, 1000);
     }
@@ -687,3 +715,4 @@ class Hay {
         setTimeout(() => this.element.remove(), 500);
     }
 }
+
