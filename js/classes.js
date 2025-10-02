@@ -38,17 +38,15 @@ class House {
         this.element.className = 'house';
         this.element.src = HOUSE_SPRITES[type];
         
-        this.x = GAME_DIMENSIONS.width / 2 - 50;
+        this.width = 100;
+        this.height = 100;
+        this.x = GAME_DIMENSIONS.width / 2 - this.width / 2;
         const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
-        this.y = walkableTop + (GAME_DIMENSIONS.height - walkableTop) / 2 - 50;
+        this.y = walkableTop + (GAME_DIMENSIONS.height - walkableTop) / 2 - this.height / 2;
         
         this.layerThreshold = this.y + 60; 
 
-        // Set the base transform for positioning
-        this.element.style.setProperty('--x-pos', `${this.x}px`);
-        this.element.style.setProperty('--y-pos', `${this.y}px`);
-        this.element.style.transform = `translate(var(--x-pos), var(--y-pos))`;
-        
+        this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
         this.element.style.visibility = 'visible';
         gameWorld.appendChild(this.element);
         
@@ -73,24 +71,24 @@ class House {
     }
     
     updateFarmRates() {
-        this.autoFarmRate = 0.18 * this.autoFarmLevel; // +20% base income per level
-        this.clickFarmValue = 0.6 * this.clickFarmLevel; // +20% base income per level
+        this.autoFarmRate = (0.15 * this.autoFarmLevel) * (1 + (this.level - 1) * 0.2);
+        this.clickFarmValue = (0.5 * this.clickFarmLevel) * (1 + (this.level - 1) * 0.2);
     }
 
     handleClick(event) {
-        event.stopPropagation();
+        event.stopPropagation(); 
+        if(isPaused) return;
 
         if (currentTool === 'repair') {
-            if (hasRepairHammer) {
+            if (this.health < HOUSE_BASE_HEALTH) {
                 this.repair();
-                hasRepairHammer = false;
+                hasRepairHammer = false; // Молот одноразовый
                 updateInventoryButtons();
-                setActiveTool('grass'); // Возвращаемся к инструменту по умолчанию
+                setActiveTool(null); // Сбрасываем инструмент
             }
-            return; // Прерываем выполнение, чтобы не фармить монеты
+            return; // Не даем фармить во время ремонта
         }
         
-        if(isPaused) return;
         playSound(clickSound);
         goldCount += this.clickFarmValue;
         updateResourceCounters();
@@ -101,24 +99,16 @@ class House {
 
     updateHpBar() {
         this.hpBar.style.width = `${(this.health / HOUSE_BASE_HEALTH) * 100}%`;
-        const barX = this.x + (this.element.offsetWidth / 2) - 25;
-        const barY = this.y - 10;
-        this.hpBarContainer.style.transform = `translate(${barX}px, ${barY}px)`;
+        this.hpBarContainer.style.transform = `translate(${this.x + 25}px, ${this.y - 10}px)`;
         this.hpBarContainer.style.visibility = 'visible';
     }
 
-    showDamageEffect() {
-        this.element.classList.add('taking-damage-effect');
-        setTimeout(() => {
-            this.element.classList.remove('taking-damage-effect');
-        }, 150); // Duration of the effect in ms
-    }
-
     takeDamage(amount) {
+        playSound(damageHouseSound);
         this.health = Math.max(0, this.health - amount);
         this.updateHpBar();
-        this.showDamageEffect();
-        playSound(damageHouseSound);
+        this.element.classList.add('taking-damage');
+        setTimeout(() => this.element.classList.remove('taking-damage'), 200);
         if (this.health <= 0) {
             this.destroy();
         }
@@ -127,6 +117,10 @@ class House {
     repair() {
         this.health = HOUSE_BASE_HEALTH;
         this.updateHpBar();
+    }
+    
+    getRect() {
+        return { x: this.x, y: this.y, width: this.width, height: this.height };
     }
 
     destroy() {
@@ -517,11 +511,11 @@ class Wolf {
         this.draggedAnimal = null; 
         
         this.element.addEventListener('pointerdown', (event) => {
-            event.stopPropagation(); // <-- Останавливаем "протекание" клика
+            event.stopPropagation();
             this.scare();
         });
 
-        this.findTarget(); // Первоначальный поиск цели
+        this.findTarget();
     }
 
     findTarget() {
@@ -534,7 +528,6 @@ class Wolf {
             this.element.style.zIndex = this.y > currentHouse.layerThreshold ? '6' : '4';
         }
 
-        // Логика определения цели (чтобы не переключаться с дома на животное)
         const stage = CYCLE_STAGES.find(s => s.frameIndex === (currentStageIndex > 0 ? currentStageIndex - 1 : 0)) || CYCLE_STAGES[0];
         const anyAnimalHiding = [...sheep, ...chickens, ...cows, ...pigs].some(a => a.isHiding);
 
@@ -596,7 +589,6 @@ class Wolf {
             targetX = this.targetAnimal.x;
             targetY = this.targetAnimal.y;
         } else {
-            // Если целей нет, волк просто уходит
             targetX = this.fromLeft ? GAME_DIMENSIONS.width + 50 : -50;
             targetY = this.y;
         }
@@ -612,7 +604,6 @@ class Wolf {
         }
         
         if (distance < 1 && !this.targetAnimal && !this.targetHouse) {
-             // Волк ушел за экран
              this.element.remove();
              const wolfIndex = wolves.indexOf(this);
              if (wolfIndex > -1) wolves.splice(wolfIndex, 1);
@@ -624,7 +615,7 @@ class Wolf {
         
         this.x += moveX;
         this.y += moveY;
-
+        
         if (currentHouse && this.y < currentHouse.y + 50) { // Не позволяет заходить за дом
             this.y = currentHouse.y + 50;
         }
@@ -688,7 +679,6 @@ class Hay {
         this.element.style.transform = `translate(${this.x}px, ${this.y}px) scale(0.5)`;
         grassLayer.appendChild(this.element);
         
-        // Animate appearance
         requestAnimationFrame(() => {
             this.element.style.transform = `translate(${this.x}px, ${this.y}px) scale(1)`;
         });

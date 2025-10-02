@@ -35,11 +35,7 @@
             <div id="cloud-layer"></div>
             <div id="grass-layer"></div>
             
-            <!-- Зоны добычи ресурсов -->
-            <div id="forest-area" class="resource-area"></div>
-            <div id="rock-area" class="resource-area"></div>
-
-            <!-- Сюда будут добавляться овцы, волки, дом -->
+            <!-- Сюда будут добавляться овцы, волки, дом и постройки -->
         </div>
         
         <div id="ui-layer">
@@ -89,7 +85,7 @@
                         </div>
                          <div id="grass-seed-counter" class="ui-element resource-counter">
                             <img src="images/icons/grass_icon.png" alt="Семена травы">
-                            <span id="grass-seed-amount">5</span>
+                            <span id="grass-seed-amount">0</span>
                         </div>
                         <div id="hay-seed-counter" class="ui-element resource-counter">
                             <img src="images/icons/rostock_small.png" alt="Семена сена">
@@ -106,19 +102,21 @@
             <div id="top-right-ui">
                 <div id="gold-counter" class="ui-element resource-counter">
                     <img src="images/gold/gold.png" alt="Золото">
-                    <span id="gold-amount">30</span>
+                    <span id="gold-amount">500</span>
                 </div>
                 <button id="shop-button" class="ui-element tool-button"></button>
                 <button id="settings-button" class="ui-element tool-button"></button>
-                <!-- Контейнер инвентаря переехал сюда -->
+                <!-- Контейнер инвентаря -->
                 <div id="main-actions-container">
                     <button id="menu-toggle-button" class="ui-element tool-button"></button>
                     <div id="action-buttons-panel">
+                        <button id="sawmill-button" class="ui-element tool-button hidden"></button>
+                        <button id="rock-button" class="ui-element tool-button hidden"></button>
                         <button id="repair-button" class="ui-element tool-button hidden"></button>
                         <button id="trough-button" class="ui-element tool-button hidden"></button>
                         <button id="piggy-food-button" class="ui-element tool-button hidden"></button>
-                        <button id="hay-button" class="ui-element tool-button"></button>
-                        <button id="grass-button" class="ui-element tool-button active"></button>
+                        <button id="hay-button" class="ui-element tool-button hidden"></button>
+                        <button id="grass-button" class="ui-element tool-button hidden"></button>
                     </div>
                 </div>
             </div>
@@ -140,43 +138,44 @@
                     <button class="shop-tab-button active" data-tab="upgrades"><span data-translate-key="shop_upgrades_title">Улучшения</span></button>
                     <button class="shop-tab-button" data-tab="buy"><span data-translate-key="shop_buy_title">Купить</span></button>
                     <button class="shop-tab-button" data-tab="house"><span data-translate-key="shop_house_title">Дом</span></button>
+                    <button class="shop-tab-button" data-tab="buildings"><span data-translate-key="shop_buildings_title">Сооружения</span></button>
                 </div>
 
                 <!-- ВКЛАДКА УЛУЧШЕНИЙ -->
                 <div id="shop-tab-upgrades" class="shop-tab-content active">
                     <div class="shop-items">
-                        <button class="shop-item" id="upgrade-forest-button" data-item="upgrade_forest">
-                            <span class="item-name" data-translate-key="shop_upgrade_forest_lvl">Улучшить Лес (Ур. 2)</span>
+                        <button class="shop-item hidden" id="upgrade-sawmill-button" data-item="upgrade_sawmill">
+                            <span class="item-name" data-translate-key="shop_upgrade_sawmill_lvl">Улучшить Лесопилку (Ур. 2)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 100</span>
                             </div>
                         </button>
-                        <button class="shop-item" id="upgrade-rock-button" data-item="upgrade_rock">
+                        <button class="shop-item hidden" id="upgrade-rock-button" data-item="upgrade_rock">
                             <span class="item-name" data-translate-key="shop_upgrade_rock_lvl">Улучшить Карьер (Ур. 2)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 200</span>
                             </div>
                         </button>
-                        <hr>
-                         <button class="shop-item" id="upgrade-pig-button" data-item="upgrade_pig">
+                        <hr id="upgrades-separator" class="hidden">
+                         <button class="shop-item hidden" id="upgrade-pig-button" data-item="upgrade_pig">
                             <span class="item-name" data-translate-key="shop_upgrade_pig_lvl">Улучшить Свинью (Ур. 2)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 180</span>
                             </div>
                         </button>
-                        <button class="shop-item" id="upgrade-trough-button" data-item="upgrade_trough">
+                        <button class="shop-item hidden" id="upgrade-trough-button" data-item="upgrade_trough">
                             <span class="item-name" data-translate-key="shop_upgrade_trough_lvl">Улучшить Кормушку (Ур. 2)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 80</span>
                             </div>
                         </button>
-                        <button class="shop-item" id="upgrade-sheep-button" data-item="upgrade_sheep">
+                        <button class="shop-item hidden" id="upgrade-sheep-button" data-item="upgrade_sheep">
                             <span class="item-name" data-translate-key="shop_upgrade_sheep_lvl">Улучшить Овцу (Ур. 2)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 150</span>
                             </div>
                         </button>
-                         <button class="shop-item" id="upgrade-cow-button" data-item="upgrade_cow">
+                         <button class="shop-item hidden" id="upgrade-cow-button" data-item="upgrade_cow">
                             <span class="item-name" data-translate-key="shop_upgrade_cow_lvl">Улучшить Корову (Ур. 2)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 250</span>
@@ -287,12 +286,11 @@
                                 <span class="cost-resource"><img src="images/tree/tree.png" alt="wood"> 40</span>
                             </div>
                         </button>
-                        <button class="shop-item" data-item="house_3" data-cost-gold="200" data-cost-wood="60" data-cost-brick="20" data-capacity="10">
+                        <button class="shop-item" data-item="house_3" data-cost-gold="200" data-cost-wood="60" data-capacity="10">
                              <span class="item-name" data-translate-key="shop_house3_name">Дом 3 (+10 мест)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 200</span>
                                 <span class="cost-resource"><img src="images/tree/tree.png" alt="wood"> 60</span>
-                                <span class="cost-resource"><img src="images/brick/brick.png" alt="brick"> 20</span>
                             </div>
                         </button>
                         <button class="shop-item" data-item="house_4" data-cost-gold="400" data-cost-wood="100" data-cost-brick="50" data-capacity="15">
@@ -317,6 +315,24 @@
                             </div>
                         </button>
                     </div>
+                </div>
+                
+                <!-- ВКЛАДКА СООРУЖЕНИЯ -->
+                <div id="shop-tab-buildings" class="shop-tab-content">
+                     <div class="shop-items">
+                         <button class="shop-item" data-item="buy_sawmill">
+                            <span class="item-name" data-translate-key="shop_buy_sawmill">Купить Лесопилку</span>
+                            <div class="item-cost">
+                                <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 250</span>
+                            </div>
+                        </button>
+                        <button class="shop-item" data-item="buy_rock">
+                            <span class="item-name" data-translate-key="shop_buy_rock">Купить Карьер</span>
+                            <div class="item-cost">
+                                <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 400</span>
+                            </div>
+                        </button>
+                     </div>
                 </div>
 
                 <button class="shop-item sell-all-button" data-item="sell_all">
@@ -377,6 +393,7 @@
 
     <script src="js/classes.js"></script>
     <script src="js/newclass.js"></script>
+    <script src="js/utils.js"></script>
     <script src="js/script.js"></script>
 </body>
 </html>

@@ -67,7 +67,7 @@ html, body {
     filter: brightness(0.6);
 }
 
-.sheep, .wolf, .wool-item, .skin-item, .house, .hp-bar-container, .chicken, .egg-item, .cow, .milk-item, .flying-coin, .pig, .trough, .meat-item, .food-bar-container, .fox, .fox-skin-item, .bear, .bear-skin-item {
+.sheep, .wolf, .wool-item, .skin-item, .house, .hp-bar-container, .chicken, .egg-item, .cow, .milk-item, .flying-coin, .pig, .trough, .meat-item, .food-bar-container, .fox, .fox-skin-item, .bear, .bear-skin-item, .resource-area, .placement-ghost {
     position: absolute;
     transition: opacity 0.5s linear, filter 0.1s linear, transform 0.3s ease-out;
     z-index: 2;
@@ -99,7 +99,8 @@ html, body {
 .pig { width: 30px; height: 30px; }
 .wolf { width: 64px; height: 64px; z-index: 3; cursor: pointer; }
 .fox { width: 38px; height: 38px; z-index: 3; cursor: pointer; }
-.bear { width: 75px; height: 75px; z-index: 3; cursor: pointer; }
+.bear { width: 80px; height: 80px; z-index: 3; cursor: pointer; }
+
 
 .wool-item, .skin-item, .egg-item, .milk-item, .flying-coin, .meat-item, .fox-skin-item, .bear-skin-item { 
     width: 20px; 
@@ -112,10 +113,7 @@ html, body {
 .milk-item {
     width: 15px; 
 }
-#bear-skin-counter img {
-    width: 24px;
-}
-
+#bear-skin-counter img { width: 22px; }
 
 .house { 
     width: 100px; 
@@ -123,16 +121,14 @@ html, body {
     z-index: 5;
     pointer-events: auto; 
     cursor: pointer;
-    transition: transform 0.1s ease-out;
-    transform: translate(var(--x-pos, 0px), var(--y-pos, 0px));
+    transition: transform 0.1s ease-out, filter 0.2s linear;
 }
 .house.clicked {
-    transform: translate(var(--x-pos), var(--y-pos)) scale(1.05);
+    transform: scale(1.05);
 }
 
-.house.taking-damage-effect {
+.house.taking-damage {
     filter: brightness(1.5) sepia(1) hue-rotate(-20deg) saturate(5);
-    transition: filter 0.1s linear;
 }
 
 .trough {
@@ -148,7 +144,7 @@ html, body {
     background-color: rgba(0,0,0,0.5);
     border: 1px solid #fff;
     border-radius: 3px;
-    z-index: 3;
+    z-index: 10;
 }
 
 .food-bar-container {
@@ -240,17 +236,15 @@ html, body {
     gap: 8px;
     transform: scaleY(0);
     transform-origin: top;
-    transition: transform 0.3s ease-in-out, max-height 0.3s ease-in-out;
-    height: auto;
-    max-height: 0px;
-    overflow-y: auto;
+    transition: transform 0.3s ease-in-out, height 0.3s ease-in-out;
+    height: 0;
+    overflow: hidden;
 }
 
 #resources-panel-container.open #resources-container {
     transform: scaleY(1);
-    max-height: 450px;
+    height: 380px; 
 }
-
 
 #resources-toggle-button {
     width: 38px;
@@ -275,7 +269,7 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 4px; /* Уменьшаем расстояние между элементами */
+    gap: 8px;
     pointer-events: auto;
 }
 
@@ -313,29 +307,27 @@ html, body {
     width: 18px;
 }
 
-/* --- Изменения для инвентаря --- */
 #main-actions-container {
-    position: relative;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 4px; /* Уменьшаем расстояние */
+    gap: 10px;
     pointer-events: auto;
     z-index: 11;
+    margin-top: 8px;
 }
 
 #action-buttons-panel {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
     gap: 10px;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-in-out;
+    transform: scaleY(0);
+    transform-origin: top; /* ИЗМЕНЕНО: Открывается вниз */
+    transition: transform 0.3s ease-in-out;
 }
 
 #main-actions-container.open #action-buttons-panel {
-    max-height: 300px; /* Достаточная высота для всех кнопок */
+    transform: scaleY(1);
 }
 
 .tool-button {
@@ -353,13 +345,11 @@ html, body {
     width: 38px;
     height: 38px;
     background-image: url('../images/icons/inventory_icon.png');
-    order: 1; 
 }
 
 #main-actions-container.open #menu-toggle-button {
     transform: rotate(180deg);
 }
-
 
 #shop-button {
     width: 50px;
@@ -809,45 +799,33 @@ html, body {
     cursor: pointer;
 }
 
-
-/* --- СТИЛИ ДЛЯ ЗОН ДОБЫЧИ РЕСУРСОВ --- */
 .resource-area {
-    position: absolute;
-    width: 80px; /* Уменьшаем контейнер */
-    height: 80px;
+    visibility: visible;
+    pointer-events: auto;
     cursor: pointer;
-    z-index: 2;
+    z-index: 4;
 }
-
-#forest-area {
-    top: 320px;      /* Ниже */
-    right: -15px;    /* Правее */
-}
-
-#rock-area {
-    bottom: 30px;    /* Выше */
-    left: -5px;      /* Правее */
-}
-
-.resource-area img {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 50%; /* Уменьшаем изображение */
-    height: 50%;
+.resource-area-visual {
+    width: 100%;
+    height: 100%;
     object-fit: contain;
+    transition: transform 0.2s;
+}
+
+.resource-area-sawmill .resource-area-visual {
+    transform: scale(1.15);
 }
 
 .resource-progress-container {
     position: absolute;
-    top: 0px; /* Над объектом */
+    top: -20px;
     left: 50%;
     transform: translateX(-50%);
-    width: 70px;
-    height: 12px;
-    background-color: rgba(0,0,0,0.6);
-    border: 1px solid #fff;
-    border-radius: 4px;
+    width: 80%;
+    height: 10px;
+    background-color: rgba(0,0,0,0.7);
+    border: 1px solid white;
+    border-radius: 5px;
     overflow: hidden;
 }
 
@@ -855,17 +833,17 @@ html, body {
     width: 0%;
     height: 100%;
     background-color: #76ff9e;
-    border-radius: 3px;
     transition: width 0.5s linear;
 }
 .resource-timer {
     position: absolute;
     width: 100%;
     text-align: center;
-    top: -1px;
-    font-size: 9px;
     color: white;
+    font-size: 8px;
     font-family: 'Press Start 2P', cursive;
+    top: 50%;
+    transform: translateY(-50%);
     text-shadow: 1px 1px 1px black;
 }
 
@@ -874,14 +852,24 @@ html, body {
     top: -20px;
     left: 50%;
     transform: translateX(-50%);
-    width: 30px;
-    height: 30px;
-    animation: bobbing 1.5s ease-in-out infinite;
-    pointer-events: none;
+    width: 25px;
+    height: 25px;
+    animation: bounce 1s infinite;
 }
 
-@keyframes bobbing {
+@keyframes bounce {
     0%, 100% { transform: translate(-50%, 0); }
-    50% { transform: translate(-50%, -8px); }
+    50% { transform: translate(-50%, -10px); }
+}
+
+.placement-ghost {
+    opacity: 0.7;
+    filter: grayscale(1) brightness(1.5);
+    z-index: 99;
+    pointer-events: none;
+    visibility: visible;
+}
+.placement-ghost.invalid {
+    filter: grayscale(1) sepia(1) hue-rotate(-50deg) saturate(5);
 }
 

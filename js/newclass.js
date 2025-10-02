@@ -7,9 +7,12 @@
 
 // +++ КЛАСС ДЛЯ ЗОНЫ ДОБЫЧИ РЕСУРСОВ (ОБЩИЙ) +++
 class ResourceArea {
-    constructor(config) {
+    constructor(config, x, y) {
         this.type = config.type;
-        this.container = document.getElementById(config.containerId);
+        this.width = config.width;
+        this.height = config.height;
+        this.x = x;
+        this.y = y;
         this.level = 1;
         this.isFarming = false;
         this.isReady = false;
@@ -22,6 +25,13 @@ class ResourceArea {
         this.resourceCounterId = config.resourceCounterId;
         this.addResource = config.addResource;
 
+        this.container = document.createElement('div');
+        this.container.className = 'resource-area';
+        this.container.style.width = `${this.width}px`;
+        this.container.style.height = `${this.height}px`;
+        this.container.style.transform = `translate(${this.x}px, ${this.y}px)`;
+        gameWorld.appendChild(this.container);
+
         this.createVisuals();
         this.createUI();
 
@@ -29,18 +39,10 @@ class ResourceArea {
     }
 
     createVisuals() {
-        // Создаем несколько изображений для более живого вида
-        for (let i = 0; i < 3; i++) {
-            const img = document.createElement('img');
-            img.src = this.sprites[0]; // Start with level 1 image
-            const offsetX = (Math.random() - 0.5) * 80; // Увеличиваем разброс по X
-            const offsetY = (Math.random() - 0.5) * 50; // Увеличиваем разброс по Y
-            const scale = 0.9 + Math.random() * 0.3; 
-            img.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-            img.style.zIndex = i;
-            this.container.appendChild(img);
-        }
-        this.visuals = this.container.querySelectorAll('img');
+        this.visual = document.createElement('img');
+        this.visual.src = this.sprites[0];
+        this.visual.className = 'resource-area-visual';
+        this.container.appendChild(this.visual);
     }
 
     createUI() {
@@ -64,10 +66,16 @@ class ResourceArea {
     }
 
     handleClick() {
-        if (this.isFarming) return;
+        if (this.isFarming || isPlacing) return;
 
-        if (!currentHouse || currentHouse.level < this.requiredHouseLevel) {
+        // Для каменоломни нужна проверка на уровень дома 3
+        if (this.type === 'rock' && (!currentHouse || currentHouse.level < this.requiredHouseLevel)) {
             showPlayerMessage(this.messageKey);
+            return;
+        }
+        // Для лесопилки нужен дом любого уровня
+        if (this.type === 'sawmill' && !currentHouse) {
+             showPlayerMessage(this.messageKey);
             return;
         }
 
@@ -142,9 +150,19 @@ class ResourceArea {
         if (this.level >= 10) imageIndex = 2;
         if (this.level >= 15) imageIndex = 3;
         
-        this.visuals.forEach(img => {
-            img.src = this.sprites[imageIndex];
-        });
+        this.visual.src = this.sprites[imageIndex];
+    }
+    
+    getRect() {
+        return { x: this.x, y: this.y, width: this.width, height: this.height };
+    }
+
+    destroy() {
+        clearInterval(this.timerId);
+        this.container.remove();
+        if (this.type === 'sawmill') sawmillArea = null;
+        if (this.type === 'rock') rockArea = null;
+        updateShopUI();
     }
 }
 
@@ -281,6 +299,8 @@ class Trough {
     constructor(px, py) {
         this.x = px;
         this.y = py;
+        this.width = 45;
+        this.height = 30;
         this.food = 0;
         this.level = troughLevel;
         this.capacity = TROUGH_BASE_CAPACITY * this.level;
@@ -340,6 +360,10 @@ class Trough {
     
     isFull() {
         return this.food >= this.capacity;
+    }
+
+    getRect() {
+        return { x: this.x, y: this.y, width: this.width, height: this.height };
     }
 
     destroy() {

@@ -14,7 +14,7 @@ const HOUSE_BASE_HEALTH = 100;
 const BASE_ANIMAL_CAPACITY = 3;
 const CHICKEN_BASE_EGG_CHANCE = 0.1;
 const TROUGH_BASE_CAPACITY = 100;
-const PIG_EAT_AMOUNT = 25; 
+const PIG_EAT_AMOUNT = 25;
 const PIG_BASE_MEAT_CHANCE = 0.4;
 
 // --- НАСТРОЙКИ ВРАГОВ ---
@@ -27,13 +27,13 @@ const BEAR_DAMAGE = 25;
 
 // --- НАСТРОЙКИ ВРЕМЕНИ СУТОК ---
 const CYCLE_STAGES = [
-    { name: "Day 1", frameIndex: 0, duration: 120000, isNight: false }, 
+    { name: "Day 1", frameIndex: 0, duration: 120000, isNight: false },
     { name: "Day 2", frameIndex: 1, duration: 60000, isNight: false },
-    { name: "Day 3", frameIndex: 2, duration: 60000, isNight: false }, 
+    { name: "Day 3", frameIndex: 2, duration: 60000, isNight: false },
     { name: "Day 4", frameIndex: 3, duration: 60000, isNight: false },
-    { name: "Day 5", frameIndex: 4, duration: 36000, isNight: true }, 
-    { name: "Day 6", frameIndex: 5, duration: 36000, isNight: true }, 
-    { name: "Day 7", frameIndex: 6, duration: 36000, isNight: true }, 
+    { name: "Day 5", frameIndex: 4, duration: 36000, isNight: true },
+    { name: "Day 6", frameIndex: 5, duration: 36000, isNight: true },
+    { name: "Day 7", frameIndex: 6, duration: 36000, isNight: true },
     { name: "Day 8", frameIndex: 7, duration: 72000, isNight: true }
 ];
 
@@ -84,6 +84,9 @@ const troughButton = document.getElementById('trough-button');
 const piggyFoodButton = document.getElementById('piggy-food-button');
 const shopButton = document.getElementById('shop-button');
 const repairButton = document.getElementById('repair-button');
+const sawmillButton = document.getElementById('sawmill-button');
+const rockButton = document.getElementById('rock-button');
+
 const shopMenu = document.getElementById('shop-menu');
 const closeShopButton = document.getElementById('close-shop-button');
 const loadingScreen = document.getElementById('loading-screen');
@@ -120,7 +123,7 @@ const CLOUD_SPRITES = ['images/clouds/cloud_1.png', 'images/clouds/cloud_2.png',
 const LOCATION_FRAMES = [ 'images/location/day_1.png','images/location/day_2.png','images/location/day_3.png','images/location/day_4.png','images/location/day_5.png','images/location/day_6.png','images/location/day_7.png','images/location/day_8.png' ];
 const HOUSE_SPRITES = { house_1: 'images/house/house_1.png', house_2: 'images/house/house_2.png', house_3: 'images/house/house_3.png', house_4: 'images/house/house_4.png' };
 const HAY_SPRITES = ['images/icons/rostock_small.png', 'images/icons/rostock_sredny.png', 'images/icons/rostock_ready.png'];
-const FOREST_SPRITES = ['images/forest/forest_1.png', 'images/forest/forest_2.png', 'images/forest/forest_3.png', 'images/forest/forest_4.png'];
+const SAWMILL_SPRITES = ['images/sawmill/sawmill_1.png', 'images/sawmill/sawmill_2.png', 'images/sawmill/sawmill_3.png', 'images/sawmill/sawmill_4.png'];
 const ROCK_SPRITES = ['images/rock/rock_1.png', 'images/rock/rock_2.png', 'images/rock/rock_3.png', 'images/rock/rock_4.png'];
 
 const MILK_ICON_SRC = 'images/icons/milk.png';
@@ -139,12 +142,39 @@ const WOOD_ICON_SRC = 'images/tree/tree.png';
 const BRICK_ICON_SRC = 'images/brick/brick.png';
 const SETTINGS_ICON_SRC = 'images/icons/settings.png';
 const GRANDFATHER_SRC = 'images/grandfather/grandfather.png';
+const SAWMILL_ICON_SRC = 'images/sawmill/sawmill_1.png';
+const ROCK_ICON_SRC = 'images/rock/rock_1.png';
+
+// --- КОНФИГУРАЦИЯ ПОСТРОЕК (ПЕРЕМЕЩЕНО СЮДА) ---
+const sawmillConfig = {
+    type: 'sawmill',
+    width: 100,
+    height: 80,
+    sprites: SAWMILL_SPRITES,
+    requiredHouseLevel: 1,
+    messageKey: 'need_house_lvl_1',
+    resourceIcon: WOOD_ICON_SRC,
+    resourceCounterId: 'wood-counter',
+    addResource: (amount) => { woodCount += amount; }
+};
+
+const rockConfig = {
+    type: 'rock',
+    width: 80,
+    height: 60,
+    sprites: ROCK_SPRITES,
+    requiredHouseLevel: 3,
+    messageKey: 'need_house_lvl_3',
+    resourceIcon: BRICK_ICON_SRC,
+    resourceCounterId: 'brick-counter',
+    addResource: (amount) => { brickCount += amount; }
+};
 
 
 // --- МАССИВ РЕСУРСОВ ДЛЯ ПРЕДЗАГРУЗКИ ---
 const ASSETS_TO_LOAD = [
     ...Object.values(sheepSprites), ...Object.values(wolfSprites), ...Object.values(chickenSprites), ...Object.values(cowSprites), ...Object.values(pigSprites), ...Object.values(troughSprites), ...Object.values(foxSprites), ...Object.values(bearSprites),
-    ...CLOUD_SPRITES, ...LOCATION_FRAMES, ...Object.values(HOUSE_SPRITES), ...HAY_SPRITES, ...FOREST_SPRITES, ...ROCK_SPRITES,
+    ...CLOUD_SPRITES, ...LOCATION_FRAMES, ...Object.values(HOUSE_SPRITES), ...HAY_SPRITES, ...SAWMILL_SPRITES, ...ROCK_SPRITES,
     'images/grass/grass.png', 'images/ground/ground.png', 'images/wool/wool.png', 'images/skin/skin.png', EGG_ICON_SRC, MILK_ICON_SRC, MEAT_ICON_SRC, PIGGY_FOOD_ICON_SRC, FOX_SKIN_SRC, BEAR_SKIN_SRC,
     'images/shop/shop.png', 'images/shop/shop_menu.png', GRANDFATHER_SRC,
     GOLD_ICON_SRC, WOOD_ICON_SRC, BRICK_ICON_SRC,
@@ -154,18 +184,23 @@ const ASSETS_TO_LOAD = [
 // --- ХРАНИЛИЩЕ ОБЪЕКТОВ И СОСТОЯНИЙ ---
 let sheep = [], chickens = [], cows = [], pigs = [], wolves = [], clouds = [], grassPatches = [], hayPatches = [], troughs = [], foxes = [], bears = [];
 let currentHouse = null;
-let forestArea = null, rockArea = null;
+let sawmillArea = null, rockArea = null;
 let woodCount = 10, brickCount = 0;
-let woolCount = 0, skinCount = 0, eggCount = 0, milkCount = 0, meatCount = 0, goldCount = 30, grassSeedCount = 5, haySeedCount = 0, pigFoodCount = 0, troughToPlace = 0, foxSkinCount = 0, bearSkinCount = 0;
+let woolCount = 0, skinCount = 0, eggCount = 0, milkCount = 0, meatCount = 0, goldCount = 500, grassSeedCount = 0, haySeedCount = 0, pigFoodCount = 0, troughToPlace = 0, foxSkinCount = 0, bearSkinCount = 0;
+let sawmillToPlace = 0, rockToPlace = 0;
+
 let activeBgLayer = bg1, hiddenBgLayer = bg2;
 let currentStageIndex = 0, cycleDirection = 1;
 let isMusicStarted = false, isPaused = false, isDialogueActive = false;
-let currentTool = 'grass';
+let currentTool = null;
 let GAME_DIMENSIONS = null;
 let sheepLevel = 1, chickenLevel = 1, cowLevel = 1, pigLevel = 1, troughLevel = 1, woolPerSheep = 1, eggChance = CHICKEN_BASE_EGG_CHANCE;
 let maxAnimals = BASE_ANIMAL_CAPACITY;
 let hasRepairHammer = false;
-let isPlacingTrough = false;
+
+let isPlacing = null; // 'trough', 'sawmill', 'rock'
+let placementGhost = null;
+
 let uiTargetCoordsCache = {};
 
 // --- НАСТРОЙКИ ---
@@ -185,7 +220,7 @@ const translations = {
     'rus': {
         loading: 'ЗАГРУЗКА', shop_house_title: 'Дом', shop_house1_name: 'Дом 1 (+5 мест)',
         shop_house2_name: 'Дом 2 (+7 мест)', shop_house3_name: 'Дом 3 (+10 мест)', shop_house4_name: 'Дом 4 (+15 мест)',
-        shop_upgrades_title: 'Улучшения', shop_upgrade_forest_lvl: 'Улучшить Лес (Ур. {level})', shop_upgrade_rock_lvl: 'Улучшить Карьер (Ур. {level})',
+        shop_upgrades_title: 'Улучшения', shop_upgrade_sawmill_lvl: 'Улучшить Лесопилку (Ур. {level})', shop_upgrade_rock_lvl: 'Улучшить Карьер (Ур. {level})',
         shop_upgrade_sheep_lvl: 'Улучшить Овцу (Ур. {level})', shop_upgrade_cow_lvl: 'Улучшить Корову (Ур. {level})',
         shop_upgrade_chicken_lvl: 'Улучшить Курицу (Ур. {level})', shop_upgrade_pig_lvl: 'Улучшить Свинью (Ур. {level})',
         shop_upgrade_trough_lvl: 'Улучшить Кормушку (Ур. {level})', shop_upgrade_autofarm_lvl: 'Авто-Фарм (Ур. {level})',
@@ -194,6 +229,7 @@ const translations = {
         shop_buy_pig: 'Купить Свинью', shop_buy_cow: 'Купить Корову', shop_buy_sheep: 'Купить Овцу',
         shop_buy_chicken: 'Купить Курицу', shop_buy_trough: 'Купить Кормушку', shop_buy_piggy_food: 'Еда для свиней (x1)',
         shop_buy_grass_seed: 'Семена травы (x10)', shop_buy_hay_seed: 'Семена сена (x10)',
+        shop_buy_sawmill: 'Купить Лесопилку', shop_buy_rock: 'Купить Карьер', shop_buildings_title: 'Сооружения',
         shop_sell_all: 'Продать Всё', game_over_title: 'ИГРА ОКОНЧЕНА', game_over_subtitle: 'Всех ваших животных украли!',
         game_over_restart: 'Начать заново', settings_title: 'Настройки', settings_sound: 'Звук',
         settings_music: 'Музыка', settings_language: 'Язык', settings_close: 'Закрыть', on: 'ВКЛ', off: 'ВЫКЛ',
@@ -205,7 +241,7 @@ const translations = {
     'eng': {
         loading: 'LOADING', shop_house_title: 'House', shop_house1_name: 'House 1 (+5 capacity)',
         shop_house2_name: 'House 2 (+7 capacity)', shop_house3_name: 'House 3 (+10 capacity)', shop_house4_name: 'House 4 (+15 capacity)',
-        shop_upgrades_title: 'Upgrades', shop_upgrade_forest_lvl: 'Upgrade Forest (Lvl {level})', shop_upgrade_rock_lvl: 'Upgrade Quarry (Lvl {level})',
+        shop_upgrades_title: 'Upgrades', shop_upgrade_sawmill_lvl: 'Upgrade Sawmill (Lvl {level})', shop_upgrade_rock_lvl: 'Upgrade Quarry (Lvl {level})',
         shop_upgrade_sheep_lvl: 'Upgrade Sheep (Lvl {level})', shop_upgrade_cow_lvl: 'Upgrade Cow (Lvl {level})',
         shop_upgrade_chicken_lvl: 'Upgrade Chicken (Lvl {level})', shop_upgrade_pig_lvl: 'Upgrade Pig (Lvl {level})',
         shop_upgrade_trough_lvl: 'Upgrade Trough (Lvl {level})', shop_upgrade_autofarm_lvl: 'Auto-Farm (Lvl {level})',
@@ -214,6 +250,7 @@ const translations = {
         shop_buy_pig: 'Buy Pig', shop_buy_cow: 'Buy Cow', shop_buy_sheep: 'Buy Sheep',
         shop_buy_chicken: 'Buy Chicken', shop_buy_trough: 'Buy Trough', shop_buy_piggy_food: 'Piggy Food (x1)',
         shop_buy_grass_seed: 'Grass Seeds (x10)', shop_buy_hay_seed: 'Hay Seeds (x10)',
+        shop_buy_sawmill: 'Buy Sawmill', shop_buy_rock: 'Buy Quarry', shop_buildings_title: 'Buildings',
         shop_sell_all: 'Sell All', game_over_title: 'GAME OVER', game_over_subtitle: 'All your animals have been stolen!',
         game_over_restart: 'Restart', settings_title: 'Settings', settings_sound: 'Sound',
         settings_music: 'Music', settings_language: 'Language', settings_close: 'Close', on: 'ON', off: 'OFF',
@@ -265,6 +302,11 @@ function translateUI() {
 }
 
 // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+function checkOverlap(rect1, rect2) {
+    if (!rect1 || !rect2) return false;
+    return !(rect1.x > rect2.x + rect2.width || rect1.x + rect1.width < rect2.x || rect1.y > rect2.y + rect2.height || rect1.y + rect1.height < rect2.y);
+}
+
 function isPointInRect(x, y, rect) { return x > rect.x && x < rect.x + rect.width && y > rect.y && y < rect.y + rect.height; }
 function isPointBlocked(px, py) { 
     if (!GAME_DIMENSIONS) return true;
@@ -375,20 +417,20 @@ function runNextStage() {
 
 // --- ЛОГИКА ИНВЕНТАРЯ ---
 function updateInventoryButtons() {
+    sawmillButton.classList.toggle('hidden', sawmillToPlace <= 0);
+    rockButton.classList.toggle('hidden', rockToPlace <= 0);
     repairButton.classList.toggle('hidden', !hasRepairHammer);
     troughButton.classList.toggle('hidden', troughToPlace <= 0);
     piggyFoodButton.classList.toggle('hidden', pigFoodCount <= 0);
     grassButton.classList.toggle('hidden', grassSeedCount <= 0);
     hayButton.classList.toggle('hidden', haySeedCount <= 0);
 
-    if (document.querySelector('.tool-button.active.hidden')) {
+    if (currentTool && document.querySelector(`#${currentTool}-button`)?.classList.contains('hidden')) {
         const firstVisibleButton = document.querySelector('#action-buttons-panel .tool-button:not(.hidden)');
         if (firstVisibleButton) {
-            firstVisibleButton.click();
+            setActiveTool(firstVisibleButton.id.replace('-button', ''));
         } else {
-            document.querySelectorAll('.tool-button.active').forEach(b => b.classList.remove('active'));
-            currentTool = null;
-            document.body.style.cursor = 'default';
+             setActiveTool(null);
         }
     }
 }
@@ -410,17 +452,30 @@ function updateShopUI() {
     const totalAnimals = sheep.length + chickens.length + cows.length + pigs.length;
     const capacityInfo = document.getElementById('animal-capacity-info');
     if (capacityInfo) capacityInfo.textContent = `${totalAnimals}/${maxAnimals}`;
+    
+    // Показываем/скрываем апгрейды
+    document.getElementById('upgrade-sawmill-button').classList.toggle('hidden', !sawmillArea);
+    document.getElementById('upgrade-rock-button').classList.toggle('hidden', !rockArea);
+    document.getElementById('upgrades-separator').classList.toggle('hidden', !sawmillArea && !rockArea);
+    document.getElementById('upgrade-sheep-button').classList.toggle('hidden', sheep.length === 0);
+    document.getElementById('upgrade-cow-button').classList.toggle('hidden', cows.length === 0);
+    document.getElementById('upgrade-chicken-button').classList.toggle('hidden', chickens.length === 0);
+    document.getElementById('upgrade-pig-button').classList.toggle('hidden', pigs.length === 0);
+    document.getElementById('upgrade-trough-button').classList.toggle('hidden', troughs.length === 0);
 
-    // --- Обновление улучшений ---
-    const upgradeForestButton = document.getElementById('upgrade-forest-button');
-    upgradeForestButton.dataset.costGold = Math.ceil(100 * Math.pow(1.8, forestArea.level - 1));
-    upgradeForestButton.querySelector('.item-name').textContent = lang.shop_upgrade_forest_lvl.replace('{level}', forestArea.level + 1);
-    upgradeForestButton.querySelector('.cost-resource').innerHTML = `<img src="images/gold/gold.png" alt="gold"> ${upgradeForestButton.dataset.costGold}`;
 
-    const upgradeRockButton = document.getElementById('upgrade-rock-button');
-    upgradeRockButton.dataset.costGold = Math.ceil(200 * Math.pow(2, rockArea.level - 1));
-    upgradeRockButton.querySelector('.item-name').textContent = lang.shop_upgrade_rock_lvl.replace('{level}', rockArea.level + 1);
-    upgradeRockButton.querySelector('.cost-resource').innerHTML = `<img src="images/gold/gold.png" alt="gold"> ${upgradeRockButton.dataset.costGold}`;
+    if (sawmillArea) {
+        const upgradeSawmillButton = document.getElementById('upgrade-sawmill-button');
+        upgradeSawmillButton.dataset.costGold = Math.ceil(100 * Math.pow(1.8, sawmillArea.level - 1));
+        upgradeSawmillButton.querySelector('.item-name').textContent = lang.shop_upgrade_sawmill_lvl.replace('{level}', sawmillArea.level + 1);
+        upgradeSawmillButton.querySelector('.cost-resource').innerHTML = `<img src="images/gold/gold.png" alt="gold"> ${upgradeSawmillButton.dataset.costGold}`;
+    }
+    if (rockArea) {
+        const upgradeRockButton = document.getElementById('upgrade-rock-button');
+        upgradeRockButton.dataset.costGold = Math.ceil(200 * Math.pow(2, rockArea.level - 1));
+        upgradeRockButton.querySelector('.item-name').textContent = lang.shop_upgrade_rock_lvl.replace('{level}', rockArea.level + 1);
+        upgradeRockButton.querySelector('.cost-resource').innerHTML = `<img src="images/gold/gold.png" alt="gold"> ${upgradeRockButton.dataset.costGold}`;
+    }
 
     const upgradePigButton = document.getElementById('upgrade-pig-button');
     upgradePigButton.dataset.costGold = Math.ceil(180 * Math.pow(2.2, pigLevel - 1));
@@ -480,6 +535,28 @@ function updateShopUI() {
         autoFarmButton.classList.add('hidden');
         clickFarmButton.classList.add('hidden');
     }
+    
+    // --- Логика отображения домов ---
+    const houseButtons = {
+        1: document.querySelector('[data-item="house_1"]'),
+        2: document.querySelector('[data-item="house_2"]'),
+        3: document.querySelector('[data-item="house_3"]'),
+        4: document.querySelector('[data-item="house_4"]')
+    };
+    const currentHouseLevel = currentHouse ? currentHouse.level : 0;
+    for (let level in houseButtons) {
+        if (houseButtons[level]) {
+            const isVisible = parseInt(level) === currentHouseLevel + 1;
+            houseButtons[level].classList.toggle('hidden', !isVisible);
+        }
+    }
+     if (currentHouseLevel === 0) {
+        houseButtons[1].classList.remove('hidden');
+    }
+    
+    // Скрываем кнопки покупки, если сооружение уже есть или в инвентаре
+    document.querySelector('[data-item="buy_sawmill"]').classList.toggle('hidden', !!sawmillArea || sawmillToPlace > 0);
+    document.querySelector('[data-item="buy_rock"]').classList.toggle('hidden', !!rockArea || rockToPlace > 0);
 }
 
 
@@ -496,8 +573,10 @@ function handleShopTransaction(event) {
     let purchaseSuccess = false;
     const totalAnimals = sheep.length + chickens.length + cows.length + pigs.length;
 
-    if (item === 'upgrade_forest') { if (goldCount >= costGold) { goldCount -= costGold; forestArea.upgrade(); purchaseSuccess = true; }
-    } else if (item === 'upgrade_rock') { if (goldCount >= costGold) { goldCount -= costGold; rockArea.upgrade(); purchaseSuccess = true; }
+    if (item === 'upgrade_sawmill') { if (sawmillArea && goldCount >= costGold) { goldCount -= costGold; sawmillArea.upgrade(); purchaseSuccess = true; }
+    } else if (item === 'upgrade_rock') { if (rockArea && goldCount >= costGold) { goldCount -= costGold; rockArea.upgrade(); purchaseSuccess = true; }
+    } else if (item === 'buy_sawmill') { if (goldCount >= 250 && !sawmillArea && sawmillToPlace === 0) { goldCount -= 250; sawmillToPlace++; purchaseSuccess = true; }
+    } else if (item === 'buy_rock') { if (goldCount >= 400 && !rockArea && rockToPlace === 0) { goldCount -= 400; rockToPlace++; purchaseSuccess = true; }
     } else if (item === 'upgrade_pig') { if (goldCount >= costGold) { goldCount -= costGold; pigLevel++; purchaseSuccess = true; }
     } else if (item === 'upgrade_trough') { if (goldCount >= costGold) { goldCount -= costGold; troughLevel++; troughs.forEach(t => t.upgrade()); purchaseSuccess = true; }
     } else if (item === 'upgrade_sheep') { if (goldCount >= costGold) { goldCount -= costGold; sheepLevel++; woolPerSheep++; purchaseSuccess = true; }
@@ -509,14 +588,18 @@ function handleShopTransaction(event) {
     } else if (item === 'buy_cow') { if (goldCount >= costGold && totalAnimals < maxAnimals) { goldCount -= costGold; cows.push(new Cow()); purchaseSuccess = true; }
     } else if (item === 'buy_sheep') { if (goldCount >= costGold && totalAnimals < maxAnimals) { goldCount -= costGold; sheep.push(new Sheep()); purchaseSuccess = true; }
     } else if (item === 'buy_chicken') { if (goldCount >= costGold && totalAnimals < maxAnimals) { goldCount -= costGold; chickens.push(new Chicken()); purchaseSuccess = true; }
-    } else if (item.startsWith('house')) { if (goldCount >= costGold && woodCount >= costWood && brickCount >= costBrick) { 
-        const oldAutoFarmLvl = currentHouse ? currentHouse.autoFarmLevel : 1;
-        const oldClickFarmLvl = currentHouse ? currentHouse.clickFarmLevel : 1;
-        goldCount -= costGold; woodCount -= costWood; brickCount -= costBrick; 
-        if (currentHouse) currentHouse.destroy(); 
-        currentHouse = new House(item, capacity, oldAutoFarmLvl, oldClickFarmLvl); 
-        purchaseSuccess = true; 
-    }
+    } else if (item.startsWith('house')) { 
+        const itemLevel = parseInt(item.split('_')[1]);
+        const requiredLevel = currentHouse ? currentHouse.level + 1 : 1;
+
+        if (itemLevel === requiredLevel && goldCount >= costGold && woodCount >= costWood && brickCount >= costBrick) { 
+            const oldAutoFarmLvl = currentHouse ? currentHouse.autoFarmLevel : 1;
+            const oldClickFarmLvl = currentHouse ? currentHouse.clickFarmLevel : 1;
+            goldCount -= costGold; woodCount -= costWood; brickCount -= costBrick; 
+            if (currentHouse) currentHouse.destroy(); 
+            currentHouse = new House(item, capacity, oldAutoFarmLvl, oldClickFarmLvl); 
+            purchaseSuccess = true; 
+        }
     } else if (item === 'buy_grass_seed') { if (goldCount >= costGold) { goldCount -= costGold; grassSeedCount += 10; purchaseSuccess = true; }
     } else if (item === 'buy_hay_seed') { if (goldCount >= costGold) { goldCount -= costGold; haySeedCount += 10; purchaseSuccess = true; }
     } else if (item === 'buy_trough') { if (goldCount >= costGold) { goldCount -= costGold; troughToPlace++; purchaseSuccess = true; }
@@ -557,45 +640,8 @@ function startGame() {
     requestAnimationFrame(gameLoop);
     runNextStage();
     
-    gameWorld.addEventListener('pointerdown', (event) => {
-        if (!isMusicStarted) { 
-            isMusicStarted = true; 
-            updateMusicState(CYCLE_STAGES[currentStageIndex]?.isNight || false);
-        }
-        const px = event.clientX - GAME_DIMENSIONS.left;
-        const py = event.clientY - GAME_DIMENSIONS.top;
-
-        if (isPlacingTrough) {
-            const troughWidth = 45; const troughHeight = 30;
-            const houseRect = currentHouse ? { x: currentHouse.x, y: currentHouse.y, width: 100, height: 100 } : null;
-            const isCollidingWithHouse = houseRect ? (px < houseRect.x + houseRect.width && px + troughWidth > houseRect.x && py < houseRect.y + houseRect.height && py + troughHeight > houseRect.y) : false;
-            
-            if (py <= (GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO) || isPointBlocked(px, py) || isCollidingWithHouse) {
-                showPlayerMessage('cant_place_here');
-                return;
-            }
-            troughs.push(new Trough(px - troughWidth/2, py - troughHeight/2));
-            isPlacingTrough = false;
-            troughToPlace--;
-            updateInventoryButtons();
-            setActiveTool('grass');
-            return;
-        }
-
-        if (currentTool === 'grass') spawnGrass(px, py); 
-        else if (currentTool === 'hay') spawnHay(px,py);
-        else if (currentTool === 'piggy_food') {
-            if (pigFoodCount > 0) {
-                 const clickedTrough = troughs.find(t => px >= t.x && px <= t.x + 45 && py >= t.y && py <= t.y + 30);
-                 if (clickedTrough && !clickedTrough.isFull()) {
-                     pigFoodCount--;
-                     clickedTrough.fill();
-                     updateResourceCounters();
-                     updateInventoryButtons();
-                 }
-            } else { showPlayerMessage('no_food'); }
-        }
-    });
+    gameWorld.addEventListener('pointerdown', handleGameClick);
+    gameWorld.addEventListener('pointermove', handleGameMouseMove);
 
     setInterval(() => { if (!isPaused && sheep.length > 0) playSound(sheepSound); }, 7000 + Math.random() * 8000);
     setInterval(() => { if (!isPaused && chickens.length > 0) playSound(chickenAmbientSound); }, 5000 + Math.random() * 6000);
@@ -604,75 +650,52 @@ function startGame() {
 }
 
 function enemySpawner() {
-    if (isPaused || isDialogueActive) {
-        setTimeout(enemySpawner, 1000);
-        return;
-    }
+    try {
+        if (isPaused || isDialogueActive) {
+            setTimeout(enemySpawner, 1000); 
+            return;
+        }
 
-    const stage = CYCLE_STAGES.find(s => s.frameIndex === (currentStageIndex > 0 ? currentStageIndex - 1 : 0)) || CYCLE_STAGES[0];
-    const dayNumber = stage.frameIndex <= 3 ? stage.frameIndex + 1 : 8 - stage.frameIndex;
-    const difficultyModifier = 1 + (dayNumber - 1) * 0.1;
-    
-    let baseMinDelay = 7000, baseMaxDelay = 9000;
-    
-    if (stage.isNight) {
-        baseMinDelay = 4000;
-        baseMaxDelay = 6000;
-    }
+        const stage = CYCLE_STAGES.find(s => s.frameIndex === (currentStageIndex > 0 ? currentStageIndex - 1 : 0)) || CYCLE_STAGES[0];
+        const dayNumber = stage.frameIndex <= 3 ? stage.frameIndex + 1 : 8 - stage.frameIndex;
+        const difficultyModifier = 1 + (dayNumber - 1) * 0.1;
+        
+        let baseMinDelay = 7000, baseMaxDelay = 9000;
+        
+        if (stage.isNight) {
+            baseMinDelay = 4000;
+            baseMaxDelay = 6000;
+        }
 
-    const minDelay = baseMinDelay / difficultyModifier;
-    const maxDelay = baseMaxDelay / difficultyModifier;
+        const minDelay = baseMinDelay / difficultyModifier;
+        const maxDelay = baseMaxDelay / difficultyModifier;
 
-    // Bear spawn logic
-    const isBearSeason = [5, 6, 7].includes(stage.frameIndex);
-    if (isBearSeason && bears.length === 0) {
-        if(Math.random() < 0.5) { // 50% chance to spawn a bear during its season if one isn't present
+        const isBearSeason = [5, 6, 7].includes(stage.frameIndex);
+        if (isBearSeason && bears.length === 0 && Math.random() < 0.25) { 
              bears.push(new Bear());
+        } else {
+            const rand = Math.random();
+            if (rand < 0.60) {
+                wolves.push(new Wolf());
+            } else {
+                foxes.push(new Fox());
+            }
+
+            if (stage.isNight && Math.random() < 0.3 * difficultyModifier) {
+                 setTimeout(() => {
+                    if (isPaused || isDialogueActive) return;
+                    if (Math.random() < 0.60) wolves.push(new Wolf());
+                    else foxes.push(new Fox());
+                }, 1000);
+            }
         }
+        
+        const nextSpawnTime = minDelay + Math.random() * (maxDelay - minDelay);
+        setTimeout(enemySpawner, nextSpawnTime);
+    } catch(e) {
+        console.error("Error in enemySpawner:", e);
+        setTimeout(enemySpawner, 10000); 
     }
-
-    // Wolf and Fox spawn logic
-    if (!isBearSeason) {
-        const rand = Math.random();
-        if (rand < 0.60) { // 60% Wolf
-            wolves.push(new Wolf());
-        } else { // 40% Fox
-            foxes.push(new Fox());
-        }
-
-        // Chance for a second enemy at night
-        if (stage.isNight && Math.random() < 0.3 * difficultyModifier) {
-             setTimeout(() => {
-                if (Math.random() < 0.60) wolves.push(new Wolf());
-                else foxes.push(new Fox());
-            }, 1000);
-        }
-    }
-    
-    const nextSpawnTime = minDelay + Math.random() * (maxDelay - minDelay);
-    setTimeout(enemySpawner, nextSpawnTime);
-}
-
-function setActiveTool(toolName) {
-    playSound(clickSound);
-    if (toolName === 'trough' && troughToPlace <= 0) { showPlayerMessage('no_item'); return; }
-    if (toolName === 'piggy_food' && pigFoodCount <= 0) { showPlayerMessage('no_item'); return; }
-    if (toolName === 'repair' && !hasRepairHammer) { showPlayerMessage('no_item'); return; }
-    
-    currentTool = toolName;
-    isPlacingTrough = (toolName === 'trough');
-    const cursorUrl = 
-        toolName === 'grass' ? GRASS_ICON_SRC : 
-        toolName === 'hay' ? HAY_SPRITES[0] : 
-        toolName === 'repair' ? REPAIR_ICON_SRC : 
-        toolName === 'trough' ? TROUGH_ICON_SRC :
-        toolName === 'piggy_food' ? PIGGY_FOOD_ICON_SRC :
-        GRASS_ICON_SRC;
-    document.body.style.cursor = `url('${cursorUrl}'), auto`;
-    
-    const toolButtons = { 'grass': grassButton, 'hay': hayButton, 'repair': repairButton, 'trough': troughButton, 'piggy_food': piggyFoodButton };
-    Object.values(toolButtons).forEach(btn => btn.classList.remove('active'));
-    if (toolButtons[toolName]) toolButtons[toolName].classList.add('active');
 }
 
 
@@ -683,30 +706,19 @@ function initializeGame() {
     GAME_DIMENSIONS = gameWorld.getBoundingClientRect();
     if (GAME_DIMENSIONS.width === 0) { console.error("Could not determine game world dimensions."); return; }
 
-    // Инициализация зон добычи
-    forestArea = new ResourceArea({
-        type: 'wood', containerId: 'forest-area', sprites: FOREST_SPRITES, requiredHouseLevel: 1,
-        messageKey: 'need_house_lvl_1', resourceIcon: WOOD_ICON_SRC, resourceCounterId: 'wood-counter',
-        addResource: (amount) => { woodCount += amount; updateResourceCounters(); }
-    });
-    rockArea = new ResourceArea({
-        type: 'brick', containerId: 'rock-area', sprites: ROCK_SPRITES, requiredHouseLevel: 3,
-        messageKey: 'need_house_lvl_3', resourceIcon: BRICK_ICON_SRC, resourceCounterId: 'brick-counter',
-        addResource: (amount) => { brickCount += amount; updateResourceCounters(); }
-    });
-
-
     updateResourceCounters();
     updateInventoryButtons();
     settingsButton.style.backgroundImage = `url('${SETTINGS_ICON_SRC}')`;
     grassButton.style.backgroundImage = `url('${GRASS_ICON_SRC}')`;
     hayButton.style.backgroundImage = `url('${HAY_SPRITES[0]}')`;
     troughButton.style.backgroundImage = `url('${TROUGH_ICON_SRC}')`;
+    sawmillButton.style.backgroundImage = `url('${SAWMILL_ICON_SRC}')`;
+    rockButton.style.backgroundImage = `url('${ROCK_ICON_SRC}')`;
     piggyFoodButton.style.backgroundImage = `url('${PIGGY_FOOD_ICON_SRC}')`;
     repairButton.style.backgroundImage = `url('${REPAIR_ICON_SRC}')`;
     menuToggleButton.style.backgroundImage = `url('${INVENTORY_ICON_SRC}')`;
     resourcesToggleButton.style.backgroundImage = `url('${CALCULATOR_ICON_SRC}')`;
-    document.body.style.cursor = `url('${GRASS_ICON_SRC}'), auto`;
+    document.body.style.cursor = 'default';
 
     for (let i = 0; i < NUM_CLOUDS; i++) { clouds.push(new Cloud()); }
     for (let i = 0; i < STARTING_CHICKENS; i++) { chickens.push(new Chicken()); }
@@ -722,6 +734,8 @@ function initializeGame() {
     grassButton.addEventListener('click', () => setActiveTool('grass'));
     hayButton.addEventListener('click', () => setActiveTool('hay'));
     troughButton.addEventListener('click', () => setActiveTool('trough'));
+    sawmillButton.addEventListener('click', () => setActiveTool('sawmill'));
+    rockButton.addEventListener('click', () => setActiveTool('rock'));
     piggyFoodButton.addEventListener('click', () => setActiveTool('piggy_food'));
     repairButton.addEventListener('click', () => { if (hasRepairHammer) setActiveTool('repair'); });
 
