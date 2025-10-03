@@ -97,7 +97,7 @@ html, body {
 .chicken { width: 27px; height: 27px; }
 .cow { width: 48px; height: 48px; }
 .pig { width: 30px; height: 30px; }
-.wolf { width: 64px; height: 64px; z-index: 3; cursor: pointer; }
+.wolf { width: 46px; height: 46px; z-index: 3; cursor: pointer; } /* Увеличен на 20% */
 .fox { width: 38px; height: 38px; z-index: 3; cursor: pointer; }
 .bear { width: 80px; height: 80px; z-index: 3; cursor: pointer; }
 
@@ -322,7 +322,7 @@ html, body {
     flex-direction: column;
     gap: 10px;
     transform: scaleY(0);
-    transform-origin: top; /* ИЗМЕНЕНО: Открывается вниз */
+    transform-origin: top;
     transition: transform 0.3s ease-in-out;
 }
 
@@ -569,7 +569,7 @@ html, body {
 .sell-all-button {
     background-color: #a56a43;
     color: white;
-    margin-top: 20px;
+    margin-top: 10px;
 }
 .sell-all-button:hover {
     background-color: #8a542f;
@@ -814,6 +814,9 @@ html, body {
 
 .resource-area-sawmill .resource-area-visual {
     transform: scale(1.15);
+}
+.resource-area-rock .resource-area-visual {
+    transform: scale(1.3);
 }
 
 .resource-progress-container {

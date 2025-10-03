@@ -286,11 +286,12 @@
                                 <span class="cost-resource"><img src="images/tree/tree.png" alt="wood"> 40</span>
                             </div>
                         </button>
-                        <button class="shop-item" data-item="house_3" data-cost-gold="200" data-cost-wood="60" data-capacity="10">
+                        <button class="shop-item" data-item="house_3" data-cost-gold="200" data-cost-wood="60" data-cost-brick="20" data-capacity="10">
                              <span class="item-name" data-translate-key="shop_house3_name">Дом 3 (+10 мест)</span>
                             <div class="item-cost">
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 200</span>
                                 <span class="cost-resource"><img src="images/tree/tree.png" alt="wood"> 60</span>
+                                <span class="cost-resource"><img src="images/brick/brick.png" alt="brick"> 20</span>
                             </div>
                         </button>
                         <button class="shop-item" data-item="house_4" data-cost-gold="400" data-cost-wood="100" data-cost-brick="50" data-capacity="15">
@@ -335,9 +336,17 @@
                      </div>
                 </div>
 
-                <button class="shop-item sell-all-button" data-item="sell_all">
-                    <span class="item-name" data-translate-key="shop_sell_all">Продать Всё</span>
-                </button>
+                <div class="sell-buttons-container">
+                    <button class="shop-item sell-all-button" data-item="sell_all">
+                        <span class="item-name" data-translate-key="shop_sell_all">Продать Всё</span>
+                    </button>
+                    <button class="shop-item sell-bio-button" data-item="sell_biomaterials">
+                        <span class="item-name" data-translate-key="shop_sell_biomaterials">Продать Биоматериалы</span>
+                    </button>
+                    <button class="shop-item sell-res-button" data-item="sell_resources">
+                        <span class="item-name" data-translate-key="shop_sell_resources">Продать Ресурсы</span>
+                    </button>
+                </div>
             </div>
         </div>
         

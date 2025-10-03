@@ -37,6 +37,67 @@ const CYCLE_STAGES = [
     { name: "Day 8", frameIndex: 7, duration: 72000, isNight: true }
 ];
 
+// --- ИГРОВЫЕ РЕСУРСЫ ---
+const sheepSprites = { front: 'images/sheep/sheep_front.png', back: 'images/sheep/sheep_back.png', left: 'images/sheep/sheep_left.png', right: 'images/sheep/sheep_right.png', eat: 'images/sheep/sheep_eat.png' };
+const wolfSprites = { front: 'images/wolf/wolf_front.png', damage: 'images/wolf/wolf_damage.png', left: 'images/wolf/wolf_left.png', right: 'images/wolf/wolf_right.png', attack: 'images/wolf/wolf_atack.png' };
+const foxSprites = { left: 'images/fox/fox_left.png', right: 'images/fox/fox_right.png', attack: 'images/fox/fox_attack.png', up: 'images/fox/fox_up.png' };
+const bearSprites = { left: 'images/bear/bear_left.png', right: 'images/bear/bear_right.png', attack: 'images/bear/bear_attack.png', damage: 'images/bear/bear_damage.png'};
+const chickenSprites = { front: 'images/chicken/chicken_top.png', back: 'images/chicken/chicken_back.png', left: 'images/chicken/chicken_left.png', right: 'images/chicken/chicken_right.png', eat: 'images/chicken/chicken_eat.png' };
+const cowSprites = { front: 'images/cow/cow_top.png', back: 'images/cow/cow_back.png', left: 'images/cow/cow_left.png', right: 'images/cow/cow_right.png', eat: 'images/cow/cow_eat.png' };
+const pigSprites = { front: 'images/pig/pig_top.png', back: 'images/pig/pig_back.png', left: 'images/pig/pig_left.png', right: 'images/pig/pig_right.png', eat: 'images/pig/pig_eat.png' };
+const troughSprites = { empty: 'images/pig/trough_topN.png', full: 'images/pig/trough_topY.png' };
+const CLOUD_SPRITES = ['images/clouds/cloud_1.png', 'images/clouds/cloud_2.png', 'images/clouds/cloud_3.png', 'images/clouds/cloud_4.png'];
+const LOCATION_FRAMES = [ 'images/location/day_1.png','images/location/day_2.png','images/location/day_3.png','images/location/day_4.png','images/location/day_5.png','images/location/day_6.png','images/location/day_7.png','images/location/day_8.png' ];
+const HOUSE_SPRITES = { house_1: 'images/house/house_1.png', house_2: 'images/house/house_2.png', house_3: 'images/house/house_3.png', house_4: 'images/house/house_4.png' };
+const HAY_SPRITES = ['images/icons/rostock_small.png', 'images/icons/rostock_sredny.png', 'images/icons/rostock_ready.png'];
+const SAWMILL_SPRITES = ['images/sawmill/sawmill_1.png', 'images/sawmill/sawmill_2.png', 'images/sawmill/sawmill_3.png', 'images/sawmill/sawmill_4.png'];
+const ROCK_SPRITES = ['images/rock/rock_1.png', 'images/rock/rock_2.png', 'images/rock/rock_3.png', 'images/rock/rock_4.png'];
+
+const MILK_ICON_SRC = 'images/icons/milk.png';
+const GRASS_ICON_SRC = 'images/icons/grass_icon.png';
+const REPAIR_ICON_SRC = 'images/icons/repair_icon.png';
+const INVENTORY_ICON_SRC = 'images/icons/inventory_icon.png';
+const EGG_ICON_SRC = 'images/chicken/egg.png';
+const MEAT_ICON_SRC = 'images/pig/meat.png';
+const PIGGY_FOOD_ICON_SRC = 'images/pig/piggy_food.png';
+const TROUGH_ICON_SRC = 'images/pig/trough_topN.png';
+const FOX_SKIN_SRC = 'images/fox/fox_skin.png';
+const BEAR_SKIN_SRC = 'images/bear/bear_skin.png';
+const CALCULATOR_ICON_SRC = 'images/icons/calculator_icon.png';
+const GOLD_ICON_SRC = 'images/gold/gold.png';
+const WOOD_ICON_SRC = 'images/tree/tree.png';
+const BRICK_ICON_SRC = 'images/brick/brick.png';
+const SETTINGS_ICON_SRC = 'images/icons/settings.png';
+const GRANDFATHER_SRC = 'images/grandfather/grandfather.png';
+const SAWMILL_ICON_SRC = 'images/sawmill/sawmill_1.png';
+const ROCK_ICON_SRC = 'images/rock/rock_1.png';
+
+// --- КОНФИГУРАЦИЯ ПОСТРОЕК ---
+const sawmillConfig = {
+    type: 'sawmill',
+    width: 115, 
+    height: 92,
+    sprites: SAWMILL_SPRITES,
+    requiredHouseLevel: 1,
+    messageKey: 'need_house_lvl_1',
+    resourceIcon: WOOD_ICON_SRC,
+    resourceCounterId: 'wood-counter',
+    addResource: (amount) => { woodCount += amount; }
+};
+
+const rockConfig = {
+    type: 'rock',
+    width: 104, // Увеличено на 30%
+    height: 78,  // Увеличено на 30%
+    sprites: ROCK_SPRITES,
+    requiredHouseLevel: 3,
+    messageKey: 'need_house_lvl_3',
+    resourceIcon: BRICK_ICON_SRC,
+    resourceCounterId: 'brick-counter',
+    addResource: (amount) => { brickCount += amount; }
+};
+
+
 // --- Зоны препятствий ---
 const OBSTACLES = [ { x: 0, y: 0.6, width: 0.075, height: 0.35 }, { x: 0.925, y: 0.6, width: 0.075, height: 0.35 } ];
 
@@ -110,67 +171,6 @@ const playerMessage = document.getElementById('player-message');
 const godButton = document.getElementById('god-button');
 
 
-// --- ИГРОВЫЕ РЕСУРСЫ ---
-const sheepSprites = { front: 'images/sheep/sheep_front.png', back: 'images/sheep/sheep_back.png', left: 'images/sheep/sheep_left.png', right: 'images/sheep/sheep_right.png', eat: 'images/sheep/sheep_eat.png' };
-const wolfSprites = { front: 'images/wolf/wolf_front.png', back: 'images/wolf/wolf_back.png', left: 'images/wolf/wolf_left.png', right: 'images/wolf/wolf_right.png', attack: 'images/wolf/wolf_atack.png' };
-const foxSprites = { left: 'images/fox/fox_left.png', right: 'images/fox/fox_right.png', attack: 'images/fox/fox_attack.png', up: 'images/fox/fox_up.png' };
-const bearSprites = { left: 'images/bear/bear_left.png', right: 'images/bear/bear_right.png', attack: 'images/bear/bear_attack.png', damage: 'images/bear/bear_damage.png'};
-const chickenSprites = { front: 'images/chicken/chicken_top.png', back: 'images/chicken/chicken_back.png', left: 'images/chicken/chicken_left.png', right: 'images/chicken/chicken_right.png', eat: 'images/chicken/chicken_eat.png' };
-const cowSprites = { front: 'images/cow/cow_top.png', back: 'images/cow/cow_back.png', left: 'images/cow/cow_left.png', right: 'images/cow/cow_right.png', eat: 'images/cow/cow_eat.png' };
-const pigSprites = { front: 'images/pig/pig_top.png', back: 'images/pig/pig_back.png', left: 'images/pig/pig_left.png', right: 'images/pig/pig_right.png', eat: 'images/pig/pig_eat.png' };
-const troughSprites = { empty: 'images/pig/trough_topN.png', full: 'images/pig/trough_topY.png' };
-const CLOUD_SPRITES = ['images/clouds/cloud_1.png', 'images/clouds/cloud_2.png', 'images/clouds/cloud_3.png', 'images/clouds/cloud_4.png'];
-const LOCATION_FRAMES = [ 'images/location/day_1.png','images/location/day_2.png','images/location/day_3.png','images/location/day_4.png','images/location/day_5.png','images/location/day_6.png','images/location/day_7.png','images/location/day_8.png' ];
-const HOUSE_SPRITES = { house_1: 'images/house/house_1.png', house_2: 'images/house/house_2.png', house_3: 'images/house/house_3.png', house_4: 'images/house/house_4.png' };
-const HAY_SPRITES = ['images/icons/rostock_small.png', 'images/icons/rostock_sredny.png', 'images/icons/rostock_ready.png'];
-const SAWMILL_SPRITES = ['images/sawmill/sawmill_1.png', 'images/sawmill/sawmill_2.png', 'images/sawmill/sawmill_3.png', 'images/sawmill/sawmill_4.png'];
-const ROCK_SPRITES = ['images/rock/rock_1.png', 'images/rock/rock_2.png', 'images/rock/rock_3.png', 'images/rock/rock_4.png'];
-
-const MILK_ICON_SRC = 'images/icons/milk.png';
-const GRASS_ICON_SRC = 'images/icons/grass_icon.png';
-const REPAIR_ICON_SRC = 'images/icons/repair_icon.png';
-const INVENTORY_ICON_SRC = 'images/icons/inventory_icon.png';
-const EGG_ICON_SRC = 'images/chicken/egg.png';
-const MEAT_ICON_SRC = 'images/pig/meat.png';
-const PIGGY_FOOD_ICON_SRC = 'images/pig/piggy_food.png';
-const TROUGH_ICON_SRC = 'images/pig/trough_topN.png';
-const FOX_SKIN_SRC = 'images/fox/fox_skin.png';
-const BEAR_SKIN_SRC = 'images/bear/bear_skin.png';
-const CALCULATOR_ICON_SRC = 'images/icons/calculator_icon.png';
-const GOLD_ICON_SRC = 'images/gold/gold.png';
-const WOOD_ICON_SRC = 'images/tree/tree.png';
-const BRICK_ICON_SRC = 'images/brick/brick.png';
-const SETTINGS_ICON_SRC = 'images/icons/settings.png';
-const GRANDFATHER_SRC = 'images/grandfather/grandfather.png';
-const SAWMILL_ICON_SRC = 'images/sawmill/sawmill_1.png';
-const ROCK_ICON_SRC = 'images/rock/rock_1.png';
-
-// --- КОНФИГУРАЦИЯ ПОСТРОЕК (ПЕРЕМЕЩЕНО СЮДА) ---
-const sawmillConfig = {
-    type: 'sawmill',
-    width: 100,
-    height: 80,
-    sprites: SAWMILL_SPRITES,
-    requiredHouseLevel: 1,
-    messageKey: 'need_house_lvl_1',
-    resourceIcon: WOOD_ICON_SRC,
-    resourceCounterId: 'wood-counter',
-    addResource: (amount) => { woodCount += amount; }
-};
-
-const rockConfig = {
-    type: 'rock',
-    width: 80,
-    height: 60,
-    sprites: ROCK_SPRITES,
-    requiredHouseLevel: 3,
-    messageKey: 'need_house_lvl_3',
-    resourceIcon: BRICK_ICON_SRC,
-    resourceCounterId: 'brick-counter',
-    addResource: (amount) => { brickCount += amount; }
-};
-
-
 // --- МАССИВ РЕСУРСОВ ДЛЯ ПРЕДЗАГРУЗКИ ---
 const ASSETS_TO_LOAD = [
     ...Object.values(sheepSprites), ...Object.values(wolfSprites), ...Object.values(chickenSprites), ...Object.values(cowSprites), ...Object.values(pigSprites), ...Object.values(troughSprites), ...Object.values(foxSprites), ...Object.values(bearSprites),
@@ -230,7 +230,8 @@ const translations = {
         shop_buy_chicken: 'Купить Курицу', shop_buy_trough: 'Купить Кормушку', shop_buy_piggy_food: 'Еда для свиней (x1)',
         shop_buy_grass_seed: 'Семена травы (x10)', shop_buy_hay_seed: 'Семена сена (x10)',
         shop_buy_sawmill: 'Купить Лесопилку', shop_buy_rock: 'Купить Карьер', shop_buildings_title: 'Сооружения',
-        shop_sell_all: 'Продать Всё', game_over_title: 'ИГРА ОКОНЧЕНА', game_over_subtitle: 'Всех ваших животных украли!',
+        shop_sell_all: 'Продать Всё', shop_sell_biomaterials: 'Продать Биоматериалы', shop_sell_resources: 'Продать Ресурсы',
+        game_over_title: 'ИГРА ОКОНЧЕНА', game_over_subtitle: 'Всех ваших животных украли!',
         game_over_restart: 'Начать заново', settings_title: 'Настройки', settings_sound: 'Звук',
         settings_music: 'Музыка', settings_language: 'Язык', settings_close: 'Закрыть', on: 'ВКЛ', off: 'ВЫКЛ',
         grandfather_dialogue: 'Ну здравствуй, молодой! Купил землю... с одной курицей?! Ха-ха, фермер от бога!\nСмотри в оба — твари тут свирепые. Загляни в магазин, а то долго не протянешь.',
@@ -251,7 +252,8 @@ const translations = {
         shop_buy_chicken: 'Buy Chicken', shop_buy_trough: 'Buy Trough', shop_buy_piggy_food: 'Piggy Food (x1)',
         shop_buy_grass_seed: 'Grass Seeds (x10)', shop_buy_hay_seed: 'Hay Seeds (x10)',
         shop_buy_sawmill: 'Buy Sawmill', shop_buy_rock: 'Buy Quarry', shop_buildings_title: 'Buildings',
-        shop_sell_all: 'Sell All', game_over_title: 'GAME OVER', game_over_subtitle: 'All your animals have been stolen!',
+        shop_sell_all: 'Sell All', shop_sell_biomaterials: 'Sell Biomaterials', shop_sell_resources: 'Sell Resources',
+        game_over_title: 'GAME OVER', game_over_subtitle: 'All your animals have been stolen!',
         game_over_restart: 'Restart', settings_title: 'Settings', settings_sound: 'Sound',
         settings_music: 'Music', settings_language: 'Language', settings_close: 'Close', on: 'ON', off: 'OFF',
         grandfather_dialogue: "Well hello, young one! Bought some land... with a single chicken?! Ha-ha, a natural farmer!\nWatch your back - the beasts here are fierce. Visit the shop, or you won't last long.",
@@ -605,7 +607,10 @@ function handleShopTransaction(event) {
     } else if (item === 'buy_trough') { if (goldCount >= costGold) { goldCount -= costGold; troughToPlace++; purchaseSuccess = true; }
     } else if (item === 'buy_piggy_food') { if (goldCount >= costGold) { goldCount -= costGold; pigFoodCount++; purchaseSuccess = true; }
     } else if (item === 'buy_hammer') { if (goldCount >= costGold && !hasRepairHammer) { goldCount -= costGold; hasRepairHammer = true; purchaseSuccess = true; }
-    } else if (item === 'sell_all') { let totalGain = (woodCount * 2) + (brickCount * 5) + (meatCount * 25) + (milkCount * 15) + (woolCount * 7) + (skinCount * 10) + (eggCount * 3) + (foxSkinCount * 15) + (bearSkinCount * 50); if (totalGain > 0) { goldCount += totalGain; woodCount=0; brickCount=0; meatCount = 0; milkCount = 0; woolCount = 0; skinCount = 0; eggCount = 0; foxSkinCount = 0; bearSkinCount=0; purchaseSuccess = true; } }
+    } else if (item === 'sell_all') { let totalGain = (woodCount * 2) + (brickCount * 5) + (meatCount * 25) + (milkCount * 15) + (woolCount * 7) + (skinCount * 10) + (eggCount * 3) + (foxSkinCount * 15) + (bearSkinCount * 50); if (totalGain > 0) { goldCount += totalGain; woodCount=0; brickCount=0; meatCount = 0; milkCount = 0; woolCount = 0; skinCount = 0; eggCount = 0; foxSkinCount = 0; bearSkinCount=0; purchaseSuccess = true; } 
+    } else if (item === 'sell_biomaterials') { let totalGain = (meatCount * 25) + (milkCount * 15) + (woolCount * 7) + (skinCount * 10) + (eggCount * 3) + (foxSkinCount * 15) + (bearSkinCount * 50); if (totalGain > 0) { goldCount += totalGain; meatCount = 0; milkCount = 0; woolCount = 0; skinCount = 0; eggCount = 0; foxSkinCount = 0; bearSkinCount=0; purchaseSuccess = true; }
+    } else if (item === 'sell_resources') { let totalGain = (woodCount * 2) + (brickCount * 5); if (totalGain > 0) { goldCount += totalGain; woodCount=0; brickCount=0; purchaseSuccess = true; }
+    }
 
     button.classList.add(purchaseSuccess ? 'purchase-success' : 'purchase-fail');
     setTimeout(() => { button.classList.remove('purchase-success', 'purchase-fail'); }, 500);

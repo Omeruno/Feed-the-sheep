@@ -489,7 +489,6 @@ class Cow {
     }
 }
 
-
 class Wolf {
     constructor() {
         this.element = document.createElement('img');
@@ -653,15 +652,29 @@ class Wolf {
     
     scare() {
         if (this.isScared) return;
-        playSound(wolfDeadSound);
         this.isScared = true;
+        this.element.style.pointerEvents = 'none';
+
+        playSound(wolfDeadSound);
+        
         if (this.isDragging && this.draggedAnimal) {
             this.draggedAnimal.isScared = false;
             this.draggedAnimal.decideNextAction();
         }
-        spawnSkin(this.x, this.y);
-        this.element.style.opacity = 0;
-        setTimeout(() => { this.element.remove(); const wolfIndex = wolves.indexOf(this); if (wolfIndex > -1) wolves.splice(wolfIndex, 1); }, 500);
+
+        // Показать изображение урона
+        this.element.src = wolfSprites.damage;
+
+        // Через короткое время начать исчезновение
+        setTimeout(() => {
+            spawnSkin(this.x, this.y);
+            this.element.style.opacity = 0;
+            setTimeout(() => {
+                this.element.remove();
+                const wolfIndex = wolves.indexOf(this);
+                if (wolfIndex > -1) wolves.splice(wolfIndex, 1);
+            }, 500); // Время на анимацию исчезновения
+        }, 300); // Время показа изображения урона
     }
 }
 

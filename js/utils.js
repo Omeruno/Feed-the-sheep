@@ -1,36 +1,37 @@
 // ==================================================================
 // ==                                                              ==
-// ==        ОБРАБОТЧИКИ СОБЫТИЙ И ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ         ==
+// ==           ОБРАБОТЧИКИ СОБЫТИЙ И УТИЛИТЫ                      ==
 // ==                                                              ==
 // ==================================================================
-// Этот файл содержит логику для взаимодействия с пользователем:
-// клики, перемещение мыши, управление инвентарем и т.д.
+// В этом файле находится логика, отвечающая за реакцию на действия
+// игрока (клики, движение мыши) и другие вспомогательные функции.
 
 function handleGameClick(event) {
-    // Если активен инструмент для размещения, вызываем функцию строительства
+    if (!isMusicStarted) { 
+        isMusicStarted = true; 
+        updateMusicState(CYCLE_STAGES[currentStageIndex]?.isNight || false);
+    }
+
+    const px = event.clientX - GAME_DIMENSIONS.left;
+    const py = event.clientY - GAME_DIMENSIONS.top;
+
     if (isPlacing) {
-        placeBuilding(event);
+        placeBuilding(px, py);
         return;
     }
     
-    // Если выбран другой инструмент (не для размещения)
-    if (currentTool) {
-        const px = event.clientX - GAME_DIMENSIONS.left;
-        const py = event.clientY - GAME_DIMENSIONS.top;
-        
-        if (currentTool === 'grass') spawnGrass(px, py);
-        else if (currentTool === 'hay') spawnHay(px,py);
-        else if (currentTool === 'piggy_food') {
-            if (pigFoodCount > 0) {
-                const clickedTrough = troughs.find(t => px >= t.x && px <= t.x + t.width && py >= t.y && py <= t.y + t.height);
-                if (clickedTrough && !clickedTrough.isFull()) {
-                    pigFoodCount--;
-                    clickedTrough.fill();
-                    updateResourceCounters();
-                    updateInventoryButtons();
-                }
-            } else { showPlayerMessage('no_food'); }
-        }
+    if (currentTool === 'grass') spawnGrass(px, py); 
+    else if (currentTool === 'hay') spawnHay(px,py);
+    else if (currentTool === 'piggy_food') {
+        if (pigFoodCount > 0) {
+            const clickedTrough = troughs.find(t => px >= t.x && px <= t.x + t.width && py >= t.y && py <= t.y + t.height);
+            if (clickedTrough && !clickedTrough.isFull()) {
+                pigFoodCount--;
+                clickedTrough.fill();
+                updateResourceCounters();
+                updateInventoryButtons();
+            }
+        } else { showPlayerMessage('no_food'); }
     }
 }
 
@@ -40,27 +41,23 @@ function handleGameMouseMove(event) {
         const py = event.clientY - GAME_DIMENSIONS.top;
         
         let width, height;
-        if (isPlacing === 'trough') { width = 45; height = 30; }
-        else if (isPlacing === 'sawmill') { width = 100; height = 80; }
-        else if (isPlacing === 'rock') { width = 80; height = 60; }
-
-        placementGhost.style.transform = `translate(${px - width / 2}px, ${py - height / 2}px)`;
-
-        // Проверка на валидность размещения
-        const ghostRect = { x: px - width / 2, y: py - height / 2, width, height };
-        const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
-        let isValid = true;
-        
-        if (py - height / 2 < walkableTop) isValid = false;
-        
-        const allObjects = [currentHouse, sawmillArea, rockArea, ...troughs].filter(Boolean);
-        for(const obj of allObjects) {
-            if (checkOverlap(ghostRect, obj.getRect())) {
-                isValid = false;
-                break;
-            }
+        if (isPlacing === 'sawmill') {
+            width = sawmillConfig.width;
+            height = sawmillConfig.height;
+        } else if (isPlacing === 'rock') {
+            width = rockConfig.width;
+            height = rockConfig.height;
+        } else if (isPlacing === 'trough') {
+            width = 45;
+            height = 30;
         }
 
+        const ghostX = clamp(px - width/2, 0, GAME_DIMENSIONS.width - width);
+        const ghostY = clamp(py - height/2, 0, GAME_DIMENSIONS.height - height);
+        
+        placementGhost.style.transform = `translate(${ghostX}px, ${ghostY}px)`;
+
+        const isValid = checkPlacementValidity(ghostX, ghostY, width, height);
         placementGhost.classList.toggle('invalid', !isValid);
     }
 }
@@ -68,66 +65,85 @@ function handleGameMouseMove(event) {
 
 function createPlacementGhost() {
     if (placementGhost) placementGhost.remove();
+
     placementGhost = document.createElement('img');
     placementGhost.className = 'placement-ghost';
     
-    if (isPlacing === 'trough') {
-        placementGhost.src = TROUGH_ICON_SRC;
-        placementGhost.style.width = '45px';
-    } else if (isPlacing === 'sawmill') {
+    if (isPlacing === 'sawmill') {
         placementGhost.src = SAWMILL_ICON_SRC;
-        placementGhost.style.width = '100px';
+        placementGhost.style.width = `${sawmillConfig.width}px`;
+        placementGhost.style.height = `${sawmillConfig.height}px`;
     } else if (isPlacing === 'rock') {
         placementGhost.src = ROCK_ICON_SRC;
-        placementGhost.style.width = '80px';
+        placementGhost.style.width = `${rockConfig.width}px`;
+        placementGhost.style.height = `${rockConfig.height}px`;
+    } else if (isPlacing === 'trough') {
+        placementGhost.src = TROUGH_ICON_SRC;
+        placementGhost.style.width = '45px';
+        placementGhost.style.height = '30px';
     }
-    
+
     gameWorld.appendChild(placementGhost);
 }
 
-
-function placeBuilding(event) {
-    const px = event.clientX - GAME_DIMENSIONS.left;
-    const py = event.clientY - GAME_DIMENSIONS.top;
-
-    let width, height;
-    if (isPlacing === 'trough') { width = 45; height = 30; }
-    else if (isPlacing === 'sawmill') { width = 100; height = 80; }
-    else if (isPlacing === 'rock') { width = 80; height = 60; }
-    
-    const x = px - width / 2;
-    const y = py - height / 2;
-    const rect = { x, y, width, height };
+function checkPlacementValidity(x, y, width, height) {
     const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
-    let canPlace = true;
+    if (y < walkableTop) return false;
 
-    if (y < walkableTop) canPlace = false;
+    const newRect = { x, y, width, height };
 
-    const allObjects = [currentHouse, sawmillArea, rockArea, ...troughs].filter(Boolean);
-    for(const obj of allObjects) {
-        if (checkOverlap(rect, obj.getRect())) {
-            canPlace = false;
-            break;
-        }
+    if (currentHouse && checkOverlap(newRect, currentHouse.getRect())) return false;
+    if (sawmillArea && checkOverlap(newRect, sawmillArea.getRect())) return false;
+    if (rockArea && checkOverlap(newRect, rockArea.getRect())) return false;
+    for (const trough of troughs) {
+        if (checkOverlap(newRect, trough.getRect())) return false;
     }
 
-    if (canPlace) {
-        if (isPlacing === 'trough') {
-            troughs.push(new Trough(x, y));
-            troughToPlace--;
-        } else if (isPlacing === 'sawmill') {
-            sawmillArea = new ResourceArea(sawmillConfig, x, y);
-            sawmillToPlace--;
-        } else if (isPlacing === 'rock') {
-            rockArea = new ResourceArea(rockConfig, x, y);
-            rockToPlace--;
-        }
-        
-        updateInventoryButtons();
-        setActiveTool(null); // Сбрасываем инструмент после установки
-    } else {
+    return true;
+}
+
+function placeBuilding(px, py) {
+    let width, height, config;
+    if (isPlacing === 'sawmill') {
+        config = sawmillConfig;
+    } else if (isPlacing === 'rock') {
+        config = rockConfig;
+    } else if (isPlacing === 'trough') {
+        width = 45;
+        height = 30;
+    }
+    
+    if(config) {
+      width = config.width;
+      height = config.height;
+    }
+
+    const placeX = clamp(px - width/2, 0, GAME_DIMENSIONS.width - width);
+    const placeY = clamp(py - height/2, 0, GAME_DIMENSIONS.height - height);
+
+    if (!checkPlacementValidity(placeX, placeY, width, height)) {
         showPlayerMessage('cant_place_here');
+        return;
     }
+
+    if (isPlacing === 'sawmill') {
+        sawmillArea = new ResourceArea(sawmillConfig, placeX, placeY);
+        sawmillToPlace--;
+    } else if (isPlacing === 'rock') {
+        rockArea = new ResourceArea(rockConfig, placeX, placeY);
+        rockToPlace--;
+    } else if (isPlacing === 'trough') {
+        troughs.push(new Trough(placeX, placeY));
+        troughToPlace--;
+    }
+    
+    if (placementGhost) placementGhost.remove();
+    placementGhost = null;
+    isPlacing = null;
+    
+    setActiveTool(null);
+    updateInventoryButtons();
+    updateShopUI();
 }
 
 function setActiveTool(toolName) {
@@ -142,8 +158,10 @@ function setActiveTool(toolName) {
     if (toolName === null) {
         currentTool = null;
         isPlacing = null;
-        if(placementGhost) placementGhost.remove();
-        placementGhost = null;
+        if(placementGhost) {
+            placementGhost.remove();
+            placementGhost = null;
+        }
         document.body.style.cursor = 'default';
         document.querySelectorAll('.tool-button').forEach(btn => btn.classList.remove('active'));
         return;
@@ -163,11 +181,17 @@ function setActiveTool(toolName) {
     }
     
     const toolButtons = { 'grass': grassButton, 'hay': hayButton, 'repair': repairButton, 'trough': troughButton, 'piggy_food': piggyFoodButton, 'sawmill': sawmillButton, 'rock': rockButton };
+    
     let cursorUrl = 'default';
-    if(toolButtons[toolName] && toolButtons[toolName].style.backgroundImage) {
-        cursorUrl = toolButtons[toolName].style.backgroundImage.slice(4, -1).replace(/"/g, "");
+    if(toolButtons[toolName]) {
+        // Получаем URL из CSS свойства
+        const style = window.getComputedStyle(toolButtons[toolName]);
+        const bgImage = style.backgroundImage;
+        if (bgImage && bgImage !== 'none') {
+            cursorUrl = bgImage.slice(4, -1).replace(/"/g, "");
+        }
     }
-    document.body.style.cursor = (cursorUrl && cursorUrl !== 'none') ? `url('${cursorUrl}'), auto` : 'default';
+    document.body.style.cursor = `url('${cursorUrl}'), auto`;
 
     Object.values(toolButtons).forEach(btn => btn.classList.remove('active'));
     if (toolButtons[toolName]) toolButtons[toolName].classList.add('active');
