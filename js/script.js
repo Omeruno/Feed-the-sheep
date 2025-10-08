@@ -225,7 +225,9 @@ setInitialVolumes();
 // --- ПЕРЕВОД ---
 const translations = {
     'rus': {
-        loading: 'ЗАГРУЗКА', shop_house_title: 'Дом', shop_house1_name: 'Дом 1 (+5 мест)',
+        loading: 'ЗАГРУЗКА',
+        click_to_start: 'НАЖМИТЕ, ЧТОБЫ НАЧАТЬ',
+        shop_house_title: 'Дом', shop_house1_name: 'Дом 1 (+5 мест)',
         shop_house2_name: 'Дом 2 (+7 мест)', shop_house3_name: 'Дом 3 (+10 мест)', shop_house4_name: 'Дом 4 (+15 мест)',
         shop_upgrades_title: 'Улучшения', shop_upgrade_sawmill_lvl: 'Улучшить Лесопилку (Ур. {level})', shop_upgrade_rock_lvl: 'Улучшить Карьер (Ур. {level})',
         shop_upgrade_sheep_lvl: 'Улучшить Овцу (Ур. {level})', shop_upgrade_cow_lvl: 'Улучшить Корову (Ур. {level})',
@@ -254,7 +256,9 @@ const translations = {
         need_house_lvl_2: 'Нужен дом 2-го уровня'
     },
     'eng': {
-        loading: 'LOADING', shop_house_title: 'House', shop_house1_name: 'House 1 (+5 capacity)',
+        loading: 'LOADING',
+        click_to_start: 'CLICK TO START',
+        shop_house_title: 'House', shop_house1_name: 'House 1 (+5 capacity)',
         shop_house2_name: 'House 2 (+7 capacity)', shop_house3_name: 'House 3 (+10 capacity)', shop_house4_name: 'House 4 (+15 capacity)',
         shop_upgrades_title: 'Upgrades', shop_upgrade_sawmill_lvl: 'Upgrade Sawmill (Lvl {level})', shop_upgrade_rock_lvl: 'Upgrade Quarry (Lvl {level})',
         shop_upgrade_sheep_lvl: 'Upgrade Sheep (Lvl {level})', shop_upgrade_cow_lvl: 'Upgrade Cow (Lvl {level})',
@@ -560,7 +564,7 @@ function updateMusicState(isNight) {
 }
 
 function updateBackground(stage) { 
-    updateMusicState(stage.isNight); 
+    if(!isDialogueActive) updateMusicState(stage.isNight); 
     const nextImageSrc = LOCATION_FRAMES[stage.frameIndex]; 
     const img = new Image(); 
     img.onload = function() { hiddenBgLayer.style.backgroundImage = `url('${nextImageSrc}')`; activeBgLayer.style.opacity = 0; hiddenBgLayer.style.opacity = 1; [activeBgLayer, hiddenBgLayer] = [hiddenBgLayer, activeBgLayer]; }; 
@@ -986,13 +990,26 @@ function initializeGame() {
 function preloadAssets() {
     let loadedCount = 0;
     const totalAssets = ASSETS_TO_LOAD.length;
-    if (totalAssets === 0) { initializeGame(); return; }
+    if (totalAssets === 0) {
+        initializeGame();
+        return;
+    }
+
     function assetLoaded() {
         loadedCount++;
         const progress = (loadedCount / totalAssets) * 100;
         progressBar.style.width = `${progress}%`;
-        if (loadedCount === totalAssets) { setTimeout(initializeGame, 500); }
+        if (loadedCount === totalAssets) {
+            const loadingText = document.getElementById('loading-text');
+            loadingText.textContent = translations[currentLanguage].click_to_start || 'CLICK TO START';
+            loadingScreen.style.cursor = 'pointer';
+
+            loadingScreen.addEventListener('click', () => {
+                initializeGame();
+            }, { once: true });
+        }
     }
+
     ASSETS_TO_LOAD.forEach(src => {
         const img = new Image();
         img.onload = assetLoaded;
@@ -1000,6 +1017,7 @@ function preloadAssets() {
         img.src = src;
     });
 }
+
 
 window.addEventListener('load', () => {
     let lastTouchEnd = 0;
