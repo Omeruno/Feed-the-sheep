@@ -9,6 +9,8 @@ html, body {
     touch-action: manipulation;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
+    width: 100%;
+    height: 100%;
 }
 
 #game-container {
@@ -36,7 +38,7 @@ html, body {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
     background-size: cover;
-    background-position: center;
+    background-position: center bottom;
     transition: opacity 1.5s ease-in-out;
 }
 
@@ -679,6 +681,7 @@ html, body {
 }
 
 .stats-content {
+    width: 300px;
     height: 70%;
     max-height: 500px;
 }
@@ -816,6 +819,7 @@ html, body {
     margin: 0 0 10px 0;
     flex-grow: 1;
     white-space: pre-wrap;
+    min-height: 50px;
 }
 
 #dialogue-text::after {
@@ -844,7 +848,7 @@ html, body {
     visibility: visible;
     pointer-events: auto;
     cursor: pointer;
-    z-index: 4;
+    z-index: 5;
 }
 .resource-area-visual {
     width: 100%;

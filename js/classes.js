@@ -1,7 +1,7 @@
 // ==================================================================
-// ==                                                              ==
-// ==                      КЛАССЫ ОБЪЕКТОВ                         ==
-// ==                                                              ==
+// ==                                                                ==
+// ==                     КЛАССЫ ОБЪЕКТОВ                            ==
+// ==                                                                ==
 // ==================================================================
 // В этом файле хранятся "чертежи" для всех игровых объектов:
 // овец, кур, волков, домов и облаков.
@@ -44,7 +44,7 @@ class House {
         const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
         this.y = walkableTop + (GAME_DIMENSIONS.height - walkableTop) / 2 - this.height / 2;
         
-        this.layerThreshold = this.y + 60; 
+        this.layerThreshold = this.y + this.height * 0.6; 
 
         this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
         this.element.style.visibility = 'visible';
@@ -143,6 +143,7 @@ class Sheep {
         this.element.src = sheepSprites.front;
         gameWorld.appendChild(this.element);
 
+        this.height = 33;
         let startX, startY;
         const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
         const greenFieldHeight = GAME_DIMENSIONS.height - walkableTop;
@@ -206,11 +207,17 @@ class Sheep {
     }
 
     update(deltaTime) {
-        if (currentHouse) {
-            this.element.style.zIndex = this.y > currentHouse.layerThreshold ? '6' : '4';
+        const buildings = [currentHouse, sawmillArea, rockArea].filter(b => b);
+        let zIndex = 4;
+        for (const building of buildings) {
+            if ((this.y + this.height) > building.layerThreshold) {
+                zIndex = 6;
+                break; 
+            }
         }
+        this.element.style.zIndex = zIndex;
 
-        if (this.isHiding || this.isEating || this.isScared) return;
+        if (this.isHiding || this.isEating || this.isScared || this.isPinnedForTutorial) return;
 
         const stage = CYCLE_STAGES.find(s => s.frameIndex === (currentStageIndex > 0 ? currentStageIndex - 1 : 0)) || CYCLE_STAGES[0];
         if (stage.isNight && currentHouse) {
@@ -272,6 +279,7 @@ class Chicken {
         this.element.src = chickenSprites.front;
         gameWorld.appendChild(this.element);
 
+        this.height = 27;
         let startX, startY;
         const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
         const greenFieldHeight = GAME_DIMENSIONS.height - walkableTop;
@@ -325,13 +333,17 @@ class Chicken {
     }
 
     update(deltaTime) {
-        if (this.isPinnedForTutorial) return;
-
-         if (currentHouse) {
-            this.element.style.zIndex = this.y > currentHouse.layerThreshold ? '6' : '4';
+        const buildings = [currentHouse, sawmillArea, rockArea].filter(b => b);
+        let zIndex = 4;
+        for (const building of buildings) {
+            if ((this.y + this.height) > building.layerThreshold) {
+                zIndex = 6;
+                break; 
+            }
         }
+        this.element.style.zIndex = zIndex;
 
-        if (this.isHiding || this.isEating || this.isScared) return;
+        if (this.isHiding || this.isEating || this.isScared || this.isPinnedForTutorial) return;
 
         const stage = CYCLE_STAGES.find(s => s.frameIndex === (currentStageIndex > 0 ? currentStageIndex - 1 : 0)) || CYCLE_STAGES[0];
         if (stage.isNight && currentHouse) {
@@ -375,6 +387,7 @@ class Cow {
         this.element = document.createElement('img'); this.element.className = 'cow'; this.element.src = cowSprites.front;
         gameWorld.appendChild(this.element); 
         
+        this.height = 48;
         let startX, startY;
         const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
         const greenFieldHeight = GAME_DIMENSIONS.height - walkableTop;
@@ -433,9 +446,15 @@ class Cow {
     }
 
     update(deltaTime) {
-        if (currentHouse) {
-            this.element.style.zIndex = this.y > currentHouse.layerThreshold ? '6' : '4';
+        const buildings = [currentHouse, sawmillArea, rockArea].filter(b => b);
+        let zIndex = 4;
+        for (const building of buildings) {
+            if ((this.y + this.height) > building.layerThreshold) {
+                zIndex = 6;
+                break; 
+            }
         }
+        this.element.style.zIndex = zIndex;
 
         if (this.isHiding || this.isEating || this.isScared) return;
 
@@ -498,6 +517,7 @@ class Wolf {
         this.element.className = 'wolf';
         this.element.src = wolfSprites.left;
         gameWorld.appendChild(this.element);
+        this.height = 46;
         this.fromLeft = Math.random() < 0.5;
         this.x = this.fromLeft ? -50 : GAME_DIMENSIONS.width + 50;
         const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
@@ -526,9 +546,15 @@ class Wolf {
     }
 
     update(deltaTime) {
-        if (currentHouse) {
-            this.element.style.zIndex = this.y > currentHouse.layerThreshold ? '6' : '4';
+        const buildings = [currentHouse, sawmillArea, rockArea].filter(b => b);
+        let zIndex = 4;
+        for (const building of buildings) {
+            if ((this.y + this.height) > building.layerThreshold) {
+                zIndex = 6;
+                break; 
+            }
         }
+        this.element.style.zIndex = zIndex;
 
         const stage = CYCLE_STAGES.find(s => s.frameIndex === (currentStageIndex > 0 ? currentStageIndex - 1 : 0)) || CYCLE_STAGES[0];
         const anyAnimalHiding = [...sheep, ...chickens, ...cows, ...pigs].some(a => a.isHiding);

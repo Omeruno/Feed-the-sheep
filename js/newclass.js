@@ -1,7 +1,7 @@
 // ==================================================================
-// ==                                                              ==
-// ==               ДОПОЛНИТЕЛЬНЫЕ КЛАССЫ ОБЪЕКТОВ                 ==
-// ==                                                              ==
+// ==                                                                ==
+// ==               ДОПОЛНИТЕЛЬНЫЕ КЛАССЫ ОБЪЕКТОВ                   ==
+// ==                                                                ==
 // ==================================================================
 // Здесь хранятся классы для новых игровых механик.
 
@@ -24,6 +24,7 @@ class ResourceArea {
         this.resourceIcon = config.resourceIcon;
         this.resourceCounterId = config.resourceCounterId;
         this.addResource = config.addResource;
+        this.layerThreshold = this.y + this.height * 0.6;
 
         this.container = document.createElement('div');
         this.container.className = 'resource-area';
@@ -66,16 +67,10 @@ class ResourceArea {
     }
 
     handleClick() {
-        if (this.isFarming || isPlacing || isDialogueActive) return;
+        if (this.isFarming || isPlacing) return;
 
-        // Для каменоломни нужна проверка на уровень дома 3
-        if (this.type === 'rock' && (!currentHouse || currentHouse.level < this.requiredHouseLevel)) {
+        if ((this.type === 'rock' || this.type === 'sawmill') && (!currentHouse || currentHouse.level < this.requiredHouseLevel)) {
             showPlayerMessage(this.messageKey);
-            return;
-        }
-        // Для лесопилки нужен дом любого уровня
-        if (this.type === 'sawmill' && !currentHouse) {
-             showPlayerMessage(this.messageKey);
             return;
         }
 
@@ -174,6 +169,7 @@ class Pig {
         this.element.className = 'pig';
         this.element.src = pigSprites.front;
         gameWorld.appendChild(this.element);
+        this.height = 30;
 
         const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
         const greenFieldHeight = GAME_DIMENSIONS.height - walkableTop;
@@ -233,9 +229,16 @@ class Pig {
     }
 
     update(deltaTime) {
-        if (currentHouse) {
-            this.element.style.zIndex = this.y > currentHouse.layerThreshold ? '6' : '4';
+        const buildings = [currentHouse, sawmillArea, rockArea].filter(b => b);
+        let zIndex = 4;
+        for (const building of buildings) {
+            if ((this.y + this.height) > building.layerThreshold) {
+                zIndex = 6;
+                break; 
+            }
         }
+        this.element.style.zIndex = zIndex;
+
 
         if (this.isHiding || this.isEating || this.isScared) return;
 
@@ -385,6 +388,7 @@ class Fox {
         gameWorld.appendChild(this.element);
         playSound(foxSound);
 
+        this.height = 38;
         this.fromLeft = Math.random() < 0.5;
         this.x = this.fromLeft ? -50 : GAME_DIMENSIONS.width + 50;
         const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
@@ -417,9 +421,15 @@ class Fox {
     update(deltaTime) {
         if (this.isDying || this.isJumping) return;
         
-        if (currentHouse) {
-            this.element.style.zIndex = this.y > currentHouse.layerThreshold ? '6' : '4';
+        const buildings = [currentHouse, sawmillArea, rockArea].filter(b => b);
+        let zIndex = 4;
+        for (const building of buildings) {
+            if ((this.y + this.height) > building.layerThreshold) {
+                zIndex = 6;
+                break; 
+            }
         }
+        this.element.style.zIndex = zIndex;
 
         const stage = CYCLE_STAGES.find(s => s.frameIndex === (currentStageIndex > 0 ? currentStageIndex - 1 : 0)) || CYCLE_STAGES[0];
         const anyAnimalHiding = [...sheep, ...chickens, ...cows, ...pigs].some(a => a.isHiding);
@@ -579,6 +589,7 @@ class Bear {
         gameWorld.appendChild(this.element);
         playSound(bearSound);
 
+        this.height = 80;
         this.fromLeft = Math.random() < 0.5;
         this.x = this.fromLeft ? -80 : GAME_DIMENSIONS.width + 80;
         const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO;
@@ -665,6 +676,16 @@ class Bear {
             this.updateHpBar(); // Keep HP bar in position during attack
             return;
         }
+        
+        const buildings = [currentHouse, sawmillArea, rockArea].filter(b => b);
+        let zIndex = 4;
+        for (const building of buildings) {
+            if ((this.y + this.height) > building.layerThreshold) {
+                zIndex = 6;
+                break; 
+            }
+        }
+        this.element.style.zIndex = zIndex;
 
         let targetX, targetY;
         
