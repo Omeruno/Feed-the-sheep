@@ -1,6 +1,6 @@
 // ==================================================================
 // ==                                                              ==
-// ==           ОБРАБОТЧИКИ СОБЫТИЙ И УТИЛИТЫ                      ==
+// ==               ОБРАБОТЧИКИ СОБЫТИЙ И УТИЛИТЫ                  ==
 // ==                                                              ==
 // ==================================================================
 // В этом файле находится логика, отвечающая за реакцию на действия
@@ -11,9 +11,22 @@ function handleGameClick(event) {
         isMusicStarted = true; 
         updateMusicState(CYCLE_STAGES[currentStageIndex]?.isNight || false);
     }
-
+    
     const px = event.clientX - GAME_DIMENSIONS.left;
     const py = event.clientY - GAME_DIMENSIONS.top;
+    
+    if (isDialogueActive) {
+        // Позволяем сажать траву во время обучения, если активен этот шаг
+        if (currentTool === 'grass') {
+            spawnGrass(px, py);
+            // Если трава была посажена, можно автоматически перейти к следующему шагу
+            if (grassPatches.length > 0) {
+                 // Возможно, стоит добавить задержку или условие, чтобы не переключаться мгновенно
+            }
+        }
+        return; // Блокируем остальные клики во время диалога
+    }
+
 
     if (isPlacing) {
         placeBuilding(px, py);

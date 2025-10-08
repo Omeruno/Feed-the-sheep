@@ -66,7 +66,7 @@ class ResourceArea {
     }
 
     handleClick() {
-        if (this.isFarming || isPlacing) return;
+        if (this.isFarming || isPlacing || isDialogueActive) return;
 
         // Для каменоломни нужна проверка на уровень дома 3
         if (this.type === 'rock' && (!currentHouse || currentHouse.level < this.requiredHouseLevel)) {

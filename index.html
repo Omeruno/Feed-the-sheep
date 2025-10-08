@@ -15,20 +15,21 @@
             <div id="progress-bar"></div>
         </div>
     </div>
-    
-    <!-- ДИАЛОГОВОЕ ОКНО С ДЕДОМ -->
-    <div id="grandfather-dialogue" class="hidden">
-        <div class="dialogue-box">
-            <img src="images/grandfather/grandfather.png" alt="Дед" class="character-image">
-            <div class="text-content">
-                <p id="dialogue-text"></p>
-                <button id="dialogue-continue" class="hidden" data-translate-key="dialogue_continue">Продолжить</button>
-            </div>
-        </div>
-    </div>
 
 
     <div id="game-container" style="display: none;">
+        <!-- ДИАЛОГОВОЕ ОКНО ОБУЧЕНИЯ -->
+        <div id="tutorial-dialogue" class="hidden">
+            <div class="dialogue-box">
+                 <button id="skip-tutorial-button" data-translate-key="skip_tutorial">Пропустить</button>
+                <img src="images/girl/teaching.png" alt="Лоана" id="tutorial-character-image" class="character-image">
+                <div class="text-content">
+                    <p id="dialogue-text"></p>
+                    <button id="dialogue-continue" class="hidden" data-translate-key="dialogue_continue">Продолжить</button>
+                </div>
+            </div>
+        </div>
+
         <div id="game-world">
             <div id="bg-1" class="background-layer"></div>
             <div id="bg-2" class="background-layer"></div>
@@ -44,65 +45,13 @@
             <div id="player-message"></div>
 
             <div id="top-left-ui">
-                <div id="resources-panel-container">
-                    <button id="resources-toggle-button" class="ui-element"></button>
-                    <div id="resources-container">
-                        <div id="wood-counter" class="ui-element resource-counter">
-                            <img src="images/tree/tree.png" alt="Дерево">
-                            <span id="wood-amount">10</span>
-                        </div>
-                        <div id="brick-counter" class="ui-element resource-counter">
-                            <img src="images/brick/brick.png" alt="Кирпич">
-                            <span id="brick-amount">0</span>
-                        </div>
-                        <div id="wool-counter" class="ui-element resource-counter">
-                            <img src="images/wool/wool.png" alt="Шерсть">
-                            <span id="wool-amount">0</span>
-                        </div>
-                        <div id="skin-counter" class="ui-element resource-counter">
-                            <img src="images/skin/skin.png" alt="Шкура">
-                            <span id="skin-amount">0</span>
-                        </div>
-                        <div id="egg-counter" class="ui-element resource-counter">
-                            <img src="images/chicken/egg.png" alt="Яйцо">
-                            <span id="egg-amount">0</span>
-                        </div>
-                        <div id="milk-counter" class="ui-element resource-counter">
-                            <img src="images/icons/milk.png" alt="Молоко">
-                            <span id="milk-amount">0</span>
-                        </div>
-                        <div id="meat-counter" class="ui-element resource-counter">
-                            <img src="images/pig/meat.png" alt="Мясо">
-                            <span id="meat-amount">0</span>
-                        </div>
-                        <div id="fox-skin-counter" class="ui-element resource-counter">
-                            <img src="images/fox/fox_skin.png" alt="Шкура Лисы">
-                            <span id="fox-skin-amount">0</span>
-                        </div>
-                        <div id="bear-skin-counter" class="ui-element resource-counter">
-                            <img src="images/bear/bear_skin.png" alt="Шкура Медведя">
-                            <span id="bear-skin-amount">0</span>
-                        </div>
-                         <div id="grass-seed-counter" class="ui-element resource-counter">
-                            <img src="images/icons/grass_icon.png" alt="Семена травы">
-                            <span id="grass-seed-amount">0</span>
-                        </div>
-                        <div id="hay-seed-counter" class="ui-element resource-counter">
-                            <img src="images/icons/rostock_small.png" alt="Семена сена">
-                            <span id="hay-seed-amount">0</span>
-                        </div>
-                        <div id="pig-food-counter" class="ui-element resource-counter">
-                            <img src="images/pig/piggy_food.png" alt="Еда для свиней">
-                            <span id="pig-food-amount">0</span>
-                        </div>
-                    </div>
-                </div>
+                 <button id="stats-button" class="ui-element tool-button"></button>
             </div>
 
             <div id="top-right-ui">
                 <div id="gold-counter" class="ui-element resource-counter">
                     <img src="images/gold/gold.png" alt="Золото">
-                    <span id="gold-amount">500</span>
+                    <span id="gold-amount">50</span>
                 </div>
                 <button id="shop-button" class="ui-element tool-button"></button>
                 <button id="settings-button" class="ui-element tool-button"></button>
@@ -129,8 +78,8 @@
                 <button id="close-shop-button">X</button>
                 
                 <div id="shop-player-resources">
-                    <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> <span id="shop-gold">30</span></span>
-                    <span class="cost-resource"><img src="images/tree/tree.png" alt="wood"> <span id="shop-wood">10</span></span>
+                    <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> <span id="shop-gold">50</span></span>
+                    <span class="cost-resource"><img src="images/tree/tree.png" alt="wood"> <span id="shop-wood">0</span></span>
                     <span class="cost-resource"><img src="images/brick/brick.png" alt="brick"> <span id="shop-brick">0</span></span>
                 </div>
 
@@ -333,7 +282,7 @@
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 400</span>
                             </div>
                         </button>
-                     </div>
+                       </div>
                 </div>
 
                 <div class="sell-buttons-container">
@@ -370,6 +319,17 @@
             </div>
         </div>
 
+        <!-- ОКНО СТАТИСТИКИ -->
+        <div id="stats-menu" class="hidden">
+            <div class="stats-content">
+                <h2 data-translate-key="stats_title">Статистика</h2>
+                <div id="stats-grid">
+                    <!-- Resources will be populated here by JS -->
+                </div>
+                <button id="close-stats-button" data-translate-key="settings_close">Закрыть</button>
+            </div>
+        </div>
+
         <div id="game-over-screen" class="hidden">
             <div class="game-over-box">
                 <h1 data-translate-key="game_over_title">ИГРА ОКОНЧЕНА</h1>
@@ -381,7 +341,9 @@
     </div>
 
     <!-- Аудиофайлы -->
-    <audio id="background-melody" src="sound/fon.mp3" loop></audio>
+    <audio id="background-melody" src="sound/fon.mp3"></audio>
+    <audio id="background-melody-2" src="sound/fon1.mp3"></audio>
+    <audio id="education-melody" src="sound/education.mp3" loop></audio>
     <audio id="day-sound" src="sound/day_sound.mp3" loop></audio>
     <audio id="night-song" src="sound/night_song.mp3" loop></audio>
     <audio id="sheep-sound" src="sound/sheep_sound.mp3"></audio>

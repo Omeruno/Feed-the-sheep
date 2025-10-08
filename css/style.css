@@ -223,45 +223,6 @@ html, body {
     pointer-events: auto;
 }
 
-#resources-panel-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-}
-
-#resources-container {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    transform: scaleY(0);
-    transform-origin: top;
-    transition: transform 0.3s ease-in-out, height 0.3s ease-in-out;
-    height: 0;
-    overflow: hidden;
-}
-
-#resources-panel-container.open #resources-container {
-    transform: scaleY(1);
-    height: 380px; 
-}
-
-#resources-toggle-button {
-    width: 38px;
-    height: 38px;
-    background-image: url('../images/icons/calculator_icon.png');
-    background-size: 60%;
-    background-position: center;
-    background-repeat: no-repeat;
-    cursor: pointer;
-    transition: transform 0.3s ease-in-out;
-}
-
-#resources-panel-container.open #resources-toggle-button {
-    transform: rotate(180deg);
-}
-
-
 #top-right-ui {
     position: absolute;
     top: 15px;
@@ -337,7 +298,12 @@ html, body {
     background-position: center;
     background-repeat: no-repeat;
     cursor: pointer;
-    transition: background-color 0.2s, border-color 0.2s, transform 0.3s ease-in-out;
+    transition: background-color 0.2s, border-color 0.2s, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+#stats-button {
+     width: 38px;
+    height: 38px;
 }
 
 #menu-toggle-button {
@@ -369,12 +335,35 @@ html, body {
     border-color: #76ff9e;
 }
 
+.highlight-ui {
+    animation: pulse 1.5s infinite;
+    box-shadow: 0 0 15px 5px rgba(255, 255, 100, 0.8) !important;
+    border-color: #fff700 !important;
+}
+
+.highlight-object {
+    z-index: 90 !important;
+    animation: pulse-shadow 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+@keyframes pulse-shadow {
+    0% { filter: drop-shadow(0 0 4px #fff700); }
+    50% { filter: drop-shadow(0 0 12px #fff700); }
+    100% { filter: drop-shadow(0 0 4px #fff700); }
+}
+
 .hidden {
     display: none !important;
 }
 
 /* --- СТИЛИ МАГАЗИНА --- */
-#shop-menu {
+#shop-menu, #stats-menu {
     position: absolute;
     top: 0;
     left: 0;
@@ -388,7 +377,7 @@ html, body {
     pointer-events: auto;
 }
 
-#shop-menu.hidden, #game-over-screen.hidden, #settings-menu.hidden, #grandfather-dialogue.hidden {
+#shop-menu.hidden, #game-over-screen.hidden, #settings-menu.hidden, #tutorial-dialogue.hidden, #stats-menu.hidden {
     display: none;
     pointer-events: none;
 }
@@ -664,8 +653,8 @@ html, body {
     transition: width 0.3s ease-in-out;
 }
 
-/* --- СТИЛИ НАСТРОЕК --- */
-#settings-menu {
+/* --- СТИЛИ НАСТРОЕК И СТАТИСТИКИ --- */
+#settings-menu, #stats-menu {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
     z-index: 40;
@@ -676,7 +665,7 @@ html, body {
     pointer-events: auto;
 }
 
-.settings-content {
+.settings-content, .stats-content {
     background-color: #e7a977;
     border: 3px solid #4a2d14;
     border-radius: 10px;
@@ -689,7 +678,12 @@ html, body {
     gap: 15px;
 }
 
-.settings-content h2 {
+.stats-content {
+    height: 70%;
+    max-height: 500px;
+}
+
+.settings-content h2, .stats-content h2 {
     font-size: 18px;
     text-align: center;
     margin: 0 0 10px 0;
@@ -701,6 +695,38 @@ html, body {
     align-items: center;
     font-size: 14px;
 }
+
+#stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+#stats-grid::-webkit-scrollbar { width: 8px; }
+#stats-grid::-webkit-scrollbar-track { background: #c58654; border-radius: 4px; }
+#stats-grid::-webkit-scrollbar-thumb { background: #4a2d14; border-radius: 4px; }
+
+.stat-item {
+    background-color: #c58654;
+    border: 2px solid #4a2d14;
+    border-radius: 5px;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    font-size: 10px;
+    gap: 5px;
+}
+.stat-item img {
+    width: 18px;
+    height: 18px;
+}
+.stat-item-full {
+    grid-column: 1 / -1;
+    font-size: 12px;
+}
+
 
 .settings-toggle {
     background-color: #c58654;
@@ -714,8 +740,8 @@ html, body {
     text-align: center;
 }
 
-#close-settings-button {
-    margin-top: 10px;
+#close-settings-button, #close-stats-button {
+    margin-top: auto; /* Push to bottom */
     padding: 10px;
     background-color: #a56a43;
     color: white;
@@ -726,19 +752,17 @@ html, body {
     cursor: pointer;
 }
 
-/* --- ДИАЛОГ С ДЕДОМ --- */
-#grandfather-dialogue {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
+/* --- ДИАЛОГ ОБУЧЕНИЯ --- */
+#tutorial-dialogue {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 360px;
+    max-width: 100%;
     z-index: 101;
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
     pointer-events: auto;
+    background-color: transparent;
 }
 
 .dialogue-box {
@@ -747,11 +771,28 @@ html, body {
     background-color: #e7a977;
     border: 4px solid #4a2d14;
     border-radius: 10px;
-    margin-bottom: 20px;
+    margin: 0 auto 10px auto;
     display: flex;
     padding: 10px;
     box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    position: relative;
 }
+
+#skip-tutorial-button {
+    position: absolute;
+    top: -30px;
+    right: 0;
+    background-color: #a56a43;
+    color: white;
+    border: 2px solid #4a2d14;
+    border-radius: 5px;
+    padding: 5px 8px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 8px;
+    cursor: pointer;
+    z-index: 102;
+}
+
 
 .character-image {
     width: 80px;

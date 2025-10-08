@@ -68,7 +68,10 @@ const GOLD_ICON_SRC = 'images/gold/gold.png';
 const WOOD_ICON_SRC = 'images/tree/tree.png';
 const BRICK_ICON_SRC = 'images/brick/brick.png';
 const SETTINGS_ICON_SRC = 'images/icons/settings.png';
-const GRANDFATHER_SRC = 'images/grandfather/grandfather.png';
+const LOANA_TEACHING_SRC = 'images/girl/teaching.png';
+const LOANA_JOY_SRC = 'images/girl/joy.png';
+const LOANA_ANGE_SRC = 'images/girl/ange.png';
+const LOANA_SADNESS_SRC = 'images/girl/sadness.png';
 const SAWMILL_ICON_SRC = 'images/sawmill/sawmill_1.png';
 const ROCK_ICON_SRC = 'images/rock/rock_1.png';
 
@@ -87,11 +90,11 @@ const sawmillConfig = {
 
 const rockConfig = {
     type: 'rock',
-    width: 104, // Увеличено на 30%
-    height: 78,  // Увеличено на 30%
+    width: 104,
+    height: 78,
     sprites: ROCK_SPRITES,
-    requiredHouseLevel: 3,
-    messageKey: 'need_house_lvl_3',
+    requiredHouseLevel: 2,
+    messageKey: 'need_house_lvl_2',
     resourceIcon: BRICK_ICON_SRC,
     resourceCounterId: 'brick-counter',
     addResource: (amount) => { brickCount += amount; }
@@ -108,6 +111,8 @@ const bg2 = document.getElementById('bg-2');
 const cloudLayer = document.getElementById('cloud-layer');
 const grassLayer = document.getElementById('grass-layer');
 const backgroundMelody = document.getElementById('background-melody');
+const backgroundMelody2 = document.getElementById('background-melody-2');
+const educationMelody = document.getElementById('education-melody');
 const daySound = document.getElementById('day-sound');
 const nightSong = document.getElementById('night-song');
 const sheepSound = document.getElementById('sheep-sound');
@@ -125,19 +130,8 @@ const bearAttackSound = document.getElementById('bear-attack-sound');
 const bearDamageSound = document.getElementById('bear-damage-sound');
 const damageHouseSound = document.getElementById('damage-house-sound');
 
-const woolAmountSpan = document.getElementById('wool-amount');
-const skinAmountSpan = document.getElementById('skin-amount');
-const eggAmountSpan = document.getElementById('egg-amount');
-const milkAmountSpan = document.getElementById('milk-amount');
-const meatAmountSpan = document.getElementById('meat-amount');
-const foxSkinAmountSpan = document.getElementById('fox-skin-amount');
-const bearSkinAmountSpan = document.getElementById('bear-skin-amount');
 const goldAmountSpan = document.getElementById('gold-amount');
-const grassSeedAmountSpan = document.getElementById('grass-seed-amount');
-const haySeedAmountSpan = document.getElementById('hay-seed-amount');
-const pigFoodAmountSpan = document.getElementById('pig-food-amount');
-const woodAmountSpan = document.getElementById('wood-amount');
-const brickAmountSpan = document.getElementById('brick-amount');
+
 
 const grassButton = document.getElementById('grass-button');
 const hayButton = document.getElementById('hay-button');
@@ -157,18 +151,26 @@ const gameOverScreen = document.getElementById('game-over-screen');
 const restartButton = document.getElementById('restart-button');
 const menuToggleButton = document.getElementById('menu-toggle-button');
 const mainActionsContainer = document.getElementById('main-actions-container');
-const resourcesToggleButton = document.getElementById('resources-toggle-button');
+
 const settingsButton = document.getElementById('settings-button');
 const settingsMenu = document.getElementById('settings-menu');
 const closeSettingsButton = document.getElementById('close-settings-button');
 const soundToggleButton = document.getElementById('sound-toggle-button');
 const musicToggleButton = document.getElementById('music-toggle-button');
 const languageToggleButton = document.getElementById('language-toggle-button');
-const grandfatherDialogue = document.getElementById('grandfather-dialogue');
+
+const statsButton = document.getElementById('stats-button');
+const statsMenu = document.getElementById('stats-menu');
+const closeStatsButton = document.getElementById('close-stats-button');
+
+
+const tutorialDialogue = document.getElementById('tutorial-dialogue');
+const tutorialCharacterImage = document.getElementById('tutorial-character-image');
 const dialogueContinueButton = document.getElementById('dialogue-continue');
 const dialogueText = document.getElementById('dialogue-text');
 const playerMessage = document.getElementById('player-message');
 const godButton = document.getElementById('god-button');
+const skipTutorialButton = document.getElementById('skip-tutorial-button');
 
 
 // --- МАССИВ РЕСУРСОВ ДЛЯ ПРЕДЗАГРУЗКИ ---
@@ -176,7 +178,7 @@ const ASSETS_TO_LOAD = [
     ...Object.values(sheepSprites), ...Object.values(wolfSprites), ...Object.values(chickenSprites), ...Object.values(cowSprites), ...Object.values(pigSprites), ...Object.values(troughSprites), ...Object.values(foxSprites), ...Object.values(bearSprites),
     ...CLOUD_SPRITES, ...LOCATION_FRAMES, ...Object.values(HOUSE_SPRITES), ...HAY_SPRITES, ...SAWMILL_SPRITES, ...ROCK_SPRITES,
     'images/grass/grass.png', 'images/ground/ground.png', 'images/wool/wool.png', 'images/skin/skin.png', EGG_ICON_SRC, MILK_ICON_SRC, MEAT_ICON_SRC, PIGGY_FOOD_ICON_SRC, FOX_SKIN_SRC, BEAR_SKIN_SRC,
-    'images/shop/shop.png', 'images/shop/shop_menu.png', GRANDFATHER_SRC,
+    'images/shop/shop.png', 'images/shop/shop_menu.png', LOANA_TEACHING_SRC, LOANA_JOY_SRC, LOANA_ANGE_SRC, LOANA_SADNESS_SRC,
     GOLD_ICON_SRC, WOOD_ICON_SRC, BRICK_ICON_SRC,
     GRASS_ICON_SRC, REPAIR_ICON_SRC, INVENTORY_ICON_SRC, CALCULATOR_ICON_SRC, SETTINGS_ICON_SRC, TROUGH_ICON_SRC
 ];
@@ -185,8 +187,8 @@ const ASSETS_TO_LOAD = [
 let sheep = [], chickens = [], cows = [], pigs = [], wolves = [], clouds = [], grassPatches = [], hayPatches = [], troughs = [], foxes = [], bears = [];
 let currentHouse = null;
 let sawmillArea = null, rockArea = null;
-let woodCount = 10, brickCount = 0;
-let woolCount = 0, skinCount = 0, eggCount = 0, milkCount = 0, meatCount = 0, goldCount = 500, grassSeedCount = 0, haySeedCount = 0, pigFoodCount = 0, troughToPlace = 0, foxSkinCount = 0, bearSkinCount = 0;
+let woodCount = 0, brickCount = 0;
+let woolCount = 0, skinCount = 0, eggCount = 0, milkCount = 0, meatCount = 0, goldCount = 50, grassSeedCount = 1, haySeedCount = 0, pigFoodCount = 0, troughToPlace = 0, foxSkinCount = 0, bearSkinCount = 0;
 let sawmillToPlace = 0, rockToPlace = 0;
 
 let activeBgLayer = bg1, hiddenBgLayer = bg2;
@@ -205,10 +207,15 @@ let uiTargetCoordsCache = {};
 
 // --- НАСТРОЙКИ ---
 let isSoundMuted = false, isMusicMuted = false, currentLanguage = 'rus';
+const musicTracks = [backgroundMelody, backgroundMelody2];
+let currentTrackIndex = 0;
 
 // --- ИНИЦИАЛИЗАЦИЯ ГРОМКОСТИ ---
 function setInitialVolumes() {
-    backgroundMelody.volume = 0.4; daySound.volume = 0.3; nightSong.volume = 0.3; sheepSound.volume = 0.16;
+    backgroundMelody.volume = 0.4;
+    backgroundMelody2.volume = 0.4;
+    educationMelody.volume = 0.4;
+    daySound.volume = 0.3; nightSong.volume = 0.3; sheepSound.volume = 0.16;
     plantSound.volume = 0.25; eatSound.volume = 0.25; wolfAttackSound.volume = 0.6; wolfDeadSound.volume = 0.6;
     chickenSound.volume = 0.5; chickenAmbientSound.volume = 0.13; cowAmbientSound.volume = 0.16; clickSound.volume = 0.5;
     foxSound.volume = 0.6; bearSound.volume = 0.7; bearAttackSound.volume = 0.7; bearDamageSound.volume = 0.8; damageHouseSound.volume = 0.8;
@@ -232,12 +239,19 @@ const translations = {
         shop_buy_sawmill: 'Купить Лесопилку', shop_buy_rock: 'Купить Карьер', shop_buildings_title: 'Сооружения',
         shop_sell_all: 'Продать Всё', shop_sell_biomaterials: 'Продать Биоматериалы', shop_sell_resources: 'Продать Ресурсы',
         game_over_title: 'ИГРА ОКОНЧЕНА', game_over_subtitle: 'Всех ваших животных украли!',
-        game_over_restart: 'Начать заново', settings_title: 'Настройки', settings_sound: 'Звук',
+        game_over_restart: 'Начать заново', settings_title: 'Настройки', stats_title: 'Статистика', settings_sound: 'Звук',
         settings_music: 'Музыка', settings_language: 'Язык', settings_close: 'Закрыть', on: 'ВКЛ', off: 'ВЫКЛ',
-        grandfather_dialogue: 'Ну здравствуй, молодой! Купил землю... с одной курицей?! Ха-ха, фермер от бога!\nСмотри в оба — твари тут свирепые. Загляни в магазин, а то долго не протянешь.',
-        dialogue_continue: 'Продолжить', no_seeds: 'Нечего сажать, загляни в магазин', no_food: 'Нет еды, загляни в магазин',
+        tutorial_1: 'Привет! Я Лоана. Вижу, ты тут новенький. Не волнуйся, я помогу тебе освоиться на этой ферме.',
+        tutorial_2: 'Смотри, у тебя уже есть курица! Она будет нести яйца, которые можно продать.',
+        tutorial_3: 'Все купленные предметы, семена или сооружения попадают в твой инвентарь. Загляни туда!',
+        tutorial_4: 'Например, там уже есть семена травы для овец. Позже ты сможешь купить и другие вещи в магазине.',
+        tutorial_5: 'ОСТОРОЖНО! Днем и ночью на ферму нападают волки и лисы! А вот медведи выходят только под покровом темноты. Кликай по ним, чтобы прогнать!',
+        tutorial_6: 'Чтобы защитить животных, построй дом. Они будут прятаться в нем ночью. Дом можно купить в магазине.',
+        tutorial_7: 'Продавай ресурсы в магазине, чтобы заработать золото и улучшить ферму. Удачи, фермер!',
+        dialogue_continue: 'Продолжить', skip_tutorial: 'Пропустить',
+        no_seeds: 'Нечего сажать, загляни в магазин', no_food: 'Нет еды, загляни в магазин',
         cant_place_here: 'Здесь нельзя ставить!', no_item: 'Предмет закончился', need_house_lvl_1: 'Нужно построить дом',
-        need_house_lvl_3: 'Нужен дом 3-го уровня'
+        need_house_lvl_2: 'Нужен дом 2-го уровня'
     },
     'eng': {
         loading: 'LOADING', shop_house_title: 'House', shop_house1_name: 'House 1 (+5 capacity)',
@@ -254,14 +268,107 @@ const translations = {
         shop_buy_sawmill: 'Buy Sawmill', shop_buy_rock: 'Buy Quarry', shop_buildings_title: 'Buildings',
         shop_sell_all: 'Sell All', shop_sell_biomaterials: 'Sell Biomaterials', shop_sell_resources: 'Sell Resources',
         game_over_title: 'GAME OVER', game_over_subtitle: 'All your animals have been stolen!',
-        game_over_restart: 'Restart', settings_title: 'Settings', settings_sound: 'Sound',
+        game_over_restart: 'Restart', settings_title: 'Settings', stats_title: 'Statistics', settings_sound: 'Sound',
         settings_music: 'Music', settings_language: 'Language', settings_close: 'Close', on: 'ON', off: 'OFF',
-        grandfather_dialogue: "Well hello, young one! Bought some land... with a single chicken?! Ha-ha, a natural farmer!\nWatch your back - the beasts here are fierce. Visit the shop, or you won't last long.",
-        dialogue_continue: 'Continue', no_seeds: 'Nothing to plant, check the shop', no_food: 'No food, check the shop',
+        tutorial_1: "Hi! I'm Loana. I see you're new here. Don't worry, I'll help you get settled on this farm.",
+        tutorial_2: "Look, you already have a chicken! It will lay eggs that you can sell.",
+        tutorial_3: "All purchased items, seeds, or buildings go into your inventory. Take a look!",
+        tutorial_4: "For example, you already have grass seeds for the sheep. Later you can buy other things in the shop.",
+        tutorial_5: "BE CAREFUL! Wolves and foxes attack the farm day and night! But bears only come out under the cover of darkness. Click on them to scare them away!",
+        tutorial_6: "To protect your animals, build a house. They will hide in it at night. You can buy a house in the shop.",
+        tutorial_7: "Sell resources in the shop to earn gold and upgrade your farm. Good luck, farmer!",
+        dialogue_continue: 'Continue', skip_tutorial: 'Skip',
+        no_seeds: 'Nothing to plant, check the shop', no_food: 'No food, check the shop',
         cant_place_here: 'Cannot place here!', no_item: 'Item is out of stock', need_house_lvl_1: 'Build a house first',
-        need_house_lvl_3: 'Requires House Level 3'
+        need_house_lvl_2: 'Requires House Level 2'
     }
 };
+
+const tutorialSteps = [
+    { textKey: 'tutorial_1', image: LOANA_TEACHING_SRC },
+    { textKey: 'tutorial_2', image: LOANA_JOY_SRC, highlight: 'chicken' },
+    { textKey: 'tutorial_3', image: LOANA_TEACHING_SRC, highlight: 'inventory' },
+    { textKey: 'tutorial_4', image: LOANA_TEACHING_SRC },
+    { textKey: 'tutorial_5', image: LOANA_ANGE_SRC },
+    { textKey: 'tutorial_6', image: LOANA_TEACHING_SRC, highlight: 'shop' },
+    { textKey: 'tutorial_7', image: LOANA_JOY_SRC }
+];
+let currentTutorialStep = 0;
+
+function startTutorial() {
+    isDialogueActive = true;
+    tutorialDialogue.classList.remove('hidden');
+    if (!isMusicMuted) {
+        musicTracks.forEach(track => track.pause());
+        daySound.pause();
+        nightSong.pause();
+        educationMelody.currentTime = 0;
+        educationMelody.play().catch(e => {});
+    }
+    showNextTutorialStep();
+}
+
+function showNextTutorialStep() {
+    // Clear all previous highlights
+    menuToggleButton.classList.remove('highlight-ui');
+    shopButton.classList.remove('highlight-ui');
+    if (chickens.length > 0 && chickens[0].element) {
+        chickens[0].element.classList.remove('highlight-object');
+        chickens[0].isPinnedForTutorial = false;
+    }
+
+
+    if (currentTutorialStep >= tutorialSteps.length) {
+        endTutorial();
+        return;
+    }
+
+    const step = tutorialSteps[currentTutorialStep];
+    dialogueContinueButton.classList.add('hidden');
+    tutorialCharacterImage.src = step.image;
+
+    typewriterEffect(dialogueText, translations[currentLanguage][step.textKey], () => {
+        dialogueContinueButton.classList.remove('hidden');
+    });
+
+    // Apply new highlight
+    if (step.highlight === 'chicken') {
+        if (chickens.length > 0) {
+            const chicken = chickens[0];
+            chicken.isPinnedForTutorial = true; // Stop it from moving
+            chicken.x = GAME_DIMENSIONS.width / 2 - (chicken.element.offsetWidth / 2);
+            chicken.y = GAME_DIMENSIONS.height - 200; 
+            chicken.element.style.transform = `translate(${chicken.x}px, ${chicken.y}px)`;
+            chicken.element.classList.add('highlight-object');
+        }
+    } else if (step.highlight === 'inventory') {
+        menuToggleButton.classList.add('highlight-ui');
+    } else if (step.highlight === 'shop') {
+        shopButton.classList.add('highlight-ui');
+    }
+
+
+    currentTutorialStep++;
+}
+
+
+function endTutorial() {
+    isDialogueActive = false;
+    tutorialDialogue.classList.add('hidden');
+    educationMelody.pause();
+    isMusicStarted = true;
+    updateMusicState(CYCLE_STAGES[currentStageIndex > 0 ? currentStageIndex - 1 : 0]?.isNight || false);
+
+    // Ensure all highlights are removed at the end
+    menuToggleButton.classList.remove('highlight-ui');
+    shopButton.classList.remove('highlight-ui');
+    if (chickens.length > 0) {
+        chickens[0].element.classList.remove('highlight-object');
+        chickens[0].isPinnedForTutorial = false;
+        chickens[0].decideNextAction(); // Let it start moving again
+    }
+    startGame();
+}
 
 function typewriterEffect(element, text, callback) {
     let i = 0;
@@ -284,12 +391,14 @@ function translateUI() {
         const key = el.dataset.translateKey;
         if (lang[key]) {
              if (el.id !== 'dialogue-text') {
-                if(el.childNodes.length > 0 && el.childNodes[0].nodeType === Node.TEXT_NODE) {
-                     el.childNodes[0].nodeValue = lang[key];
-                } 
-                else if (el.querySelector('span')) {
-                     el.querySelector('span').textContent = lang[key];
-                }
+                 if(el.childNodes.length > 0 && el.childNodes[0].nodeType === Node.TEXT_NODE) {
+                      el.childNodes[0].nodeValue = lang[key];
+                 } 
+                 else if (el.querySelector('span')) {
+                      el.querySelector('span').textContent = lang[key];
+                 } else {
+                     el.textContent = lang[key];
+                 }
             }
         }
     });
@@ -319,11 +428,7 @@ function isPointBlocked(px, py) {
 function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
 function playSound(soundElement) { if (soundElement && !isSoundMuted) { soundElement.currentTime = 0; soundElement.play().catch(e => {}); } }
 function updateResourceCounters() {
-    woolAmountSpan.textContent = woolCount; skinAmountSpan.textContent = skinCount; eggAmountSpan.textContent = eggCount;
-    milkAmountSpan.textContent = milkCount; meatAmountSpan.textContent = meatCount; foxSkinAmountSpan.textContent = foxSkinCount;
-    bearSkinAmountSpan.textContent = bearSkinCount; goldAmountSpan.textContent = Math.floor(goldCount);
-    grassSeedAmountSpan.textContent = grassSeedCount; haySeedAmountSpan.textContent = haySeedCount;
-    pigFoodAmountSpan.textContent = pigFoodCount; woodAmountSpan.textContent = woodCount; brickAmountSpan.textContent = brickCount;
+    goldAmountSpan.textContent = Math.floor(goldCount);
 }
 
 function showPlayerMessage(messageKey) {
@@ -334,16 +439,72 @@ function showPlayerMessage(messageKey) {
     }, 2000);
 }
 
+function updateStatsUI() {
+    const statsGrid = document.getElementById('stats-grid');
+    if (!statsGrid) return;
+
+    statsGrid.innerHTML = '';
+
+    const resources = [
+        { value: Math.floor(goldCount), icon: GOLD_ICON_SRC },
+        { value: woodCount, icon: WOOD_ICON_SRC },
+        { value: brickCount, icon: BRICK_ICON_SRC },
+        { value: woolCount, icon: 'images/wool/wool.png' },
+        { value: skinCount, icon: 'images/skin/skin.png' },
+        { value: eggCount, icon: EGG_ICON_SRC },
+        { value: milkCount, icon: MILK_ICON_SRC },
+        { value: meatCount, icon: MEAT_ICON_SRC },
+        { value: foxSkinCount, icon: FOX_SKIN_SRC },
+        { value: bearSkinCount, icon: BEAR_SKIN_SRC },
+        { value: grassSeedCount, icon: GRASS_ICON_SRC },
+        { value: haySeedCount, icon: HAY_SPRITES[0] },
+        { value: pigFoodCount, icon: PIGGY_FOOD_ICON_SRC }
+    ];
+
+    const animals = [
+        { count: chickens.length, icon: chickenSprites.front },
+        { count: sheep.length, icon: sheepSprites.front },
+        { count: cows.length, icon: cowSprites.front },
+        { count: pigs.length, icon: pigSprites.front }
+    ];
+
+    const totalAnimals = chickens.length + sheep.length + cows.length + pigs.length;
+    let statsHTML = `<div class="stat-item stat-item-full"><span>Животных: ${totalAnimals} / ${maxAnimals}</span></div>`;
+    if (currentHouse) {
+        statsHTML += `<div class="stat-item stat-item-full"><span>Уровень дома: ${currentHouse.level}</span></div>`;
+    }
+
+    resources.forEach(stat => {
+        statsHTML += `
+            <div class="stat-item">
+                <img src="${stat.icon}" alt="">
+                <span>${stat.value}</span>
+            </div>
+        `;
+    });
+    
+    animals.forEach(stat => {
+        statsHTML += `
+            <div class="stat-item">
+                <img src="${stat.icon}" alt="" style="width: 24px; height: 24px;">
+                <span>${stat.count}</span>
+            </div>
+        `;
+    });
+
+    statsGrid.innerHTML = statsHTML;
+}
+
 // --- МЕХАНИКА ИГРЫ ---
 function spawnGrass(px, py) { if(grassSeedCount <= 0) { showPlayerMessage('no_seeds'); return; } grassSeedCount--; updateResourceCounters(); updateInventoryButtons(); playSound(plantSound); const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO; if (py <= walkableTop || isPointBlocked(px, py)) return; const patchX = clamp(px - 12.5, 0, GAME_DIMENSIONS.width - 25); const patchY = clamp(py - 12.5, walkableTop, GAME_DIMENSIONS.height - 25); const patchElement = document.createElement('img'); patchElement.className = 'grass-patch'; patchElement.src = 'images/grass/grass.png'; patchElement.style.transform = `translate(${patchX}px, ${patchY}px)`; grassLayer.appendChild(patchElement); grassPatches.push({ x: patchX, y: patchY, element: patchElement }); [...sheep].forEach(animal => animal.decideNextAction()); }
 function spawnHay(px, py) { if(haySeedCount <= 0) { showPlayerMessage('no_seeds'); return; } haySeedCount--; updateResourceCounters(); updateInventoryButtons(); playSound(plantSound); const walkableTop = GAME_DIMENSIONS.height * WALKABLE_TOP_RATIO; if (py <= walkableTop || isPointBlocked(px, py)) return; const patchX = clamp(px - 10, 0, GAME_DIMENSIONS.width - 20); const patchY = clamp(py - 10, walkableTop, GAME_DIMENSIONS.height - 20); hayPatches.push(new Hay(patchX, patchY)); [...cows].forEach(cow => cow.decideNextAction()); }
-function spawnWool(px, py, amount = 1) { woolCount += amount; updateResourceCounters(); const el = document.createElement('img'); el.src = 'images/wool/wool.png'; el.className = 'wool-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'wool-counter'); }
-function spawnSkin(px, py) { skinCount++; updateResourceCounters(); const el = document.createElement('img'); el.src = 'images/skin/skin.png'; el.className = 'skin-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'skin-counter'); }
-function spawnFoxSkin(px, py) { foxSkinCount++; updateResourceCounters(); const el = document.createElement('img'); el.src = FOX_SKIN_SRC; el.className = 'fox-skin-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'fox-skin-counter'); }
-function spawnBearSkin(px, py) { bearSkinCount++; updateResourceCounters(); const el = document.createElement('img'); el.src = BEAR_SKIN_SRC; el.className = 'bear-skin-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'bear-skin-counter'); }
-function spawnEgg(px, py) { eggCount++; updateResourceCounters(); const el = document.createElement('img'); el.src = EGG_ICON_SRC; el.className = 'egg-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'egg-counter'); }
-function spawnMilk(px, py) { milkCount++; updateResourceCounters(); const el = document.createElement('img'); el.src = MILK_ICON_SRC; el.className = 'milk-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'milk-counter'); }
-function spawnMeat(px, py) { meatCount++; updateResourceCounters(); const el = document.createElement('img'); el.src = MEAT_ICON_SRC; el.className = 'meat-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'meat-counter'); }
+function spawnWool(px, py, amount = 1) { woolCount += amount; const el = document.createElement('img'); el.src = 'images/wool/wool.png'; el.className = 'wool-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'wool-counter'); }
+function spawnSkin(px, py) { skinCount++; const el = document.createElement('img'); el.src = 'images/skin/skin.png'; el.className = 'skin-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'skin-counter'); }
+function spawnFoxSkin(px, py) { foxSkinCount++; const el = document.createElement('img'); el.src = FOX_SKIN_SRC; el.className = 'fox-skin-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'fox-skin-counter'); }
+function spawnBearSkin(px, py) { bearSkinCount++; const el = document.createElement('img'); el.src = BEAR_SKIN_SRC; el.className = 'bear-skin-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'bear-skin-counter'); }
+function spawnEgg(px, py) { eggCount++; const el = document.createElement('img'); el.src = EGG_ICON_SRC; el.className = 'egg-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'egg-counter'); }
+function spawnMilk(px, py) { milkCount++; const el = document.createElement('img'); el.src = MILK_ICON_SRC; el.className = 'milk-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'milk-counter'); }
+function spawnMeat(px, py) { meatCount++; const el = document.createElement('img'); el.src = MEAT_ICON_SRC; el.className = 'meat-item'; el.style.transform = `translate(${px}px, ${py}px)`; el.style.visibility = 'visible'; gameWorld.appendChild(el); animateResourceToUI(el, 'meat-counter'); }
 
 function spawnFlyingCoin(startX, startY) { const coin = document.createElement('img'); coin.src = GOLD_ICON_SRC; coin.className = 'flying-coin'; coin.style.transform = `translate(${startX}px, ${startY}px)`; coin.style.visibility = 'visible'; gameWorld.appendChild(coin); animateResourceToUI(coin, 'gold-counter'); }
 function animateResourceToUI(element, targetCounterId) {
@@ -374,12 +535,23 @@ function animateResourceToUI(element, targetCounterId) {
 }
 
 // --- УПРАВЛЕНИЕ МУЗЫКОЙ И ФОНОМ ---
+function playNextTrack() {
+    if (isMusicMuted) return;
+    currentTrackIndex = (currentTrackIndex + 1) % musicTracks.length;
+    const nextTrack = musicTracks[currentTrackIndex];
+    nextTrack.currentTime = 0;
+    nextTrack.play().catch(e => {});
+}
+
 function updateMusicState(isNight) {
     if (isMusicMuted || !isMusicStarted) {
-        backgroundMelody.pause(); daySound.pause(); nightSong.pause();
+        musicTracks.forEach(track => track.pause());
+        daySound.pause();
+        nightSong.pause();
         return;
     }
-    backgroundMelody.play().catch(e => {});
+    educationMelody.pause();
+    musicTracks[currentTrackIndex].play().catch(e => {});
     if (isNight) { 
         daySound.pause(); nightSong.play().catch(e => {}); 
     } else { 
@@ -408,7 +580,7 @@ function updateBackground(stage) {
 }
 
 function runNextStage() { 
-    if (isPaused || isDialogueActive) { setTimeout(runNextStage, 100); return; }
+    if (isPaused) { setTimeout(runNextStage, 100); return; }
     if (currentStageIndex >= CYCLE_STAGES.length) { cycleDirection = -1; currentStageIndex = CYCLE_STAGES.length - 2; } 
     if (currentStageIndex < 0) { cycleDirection = 1; currentStageIndex = 1; } 
     const stage = CYCLE_STAGES[currentStageIndex]; 
@@ -624,12 +796,10 @@ function gameOver() { isPaused = true; gameOverScreen.classList.remove('hidden')
 
 // --- ИНИЦИАЛИЗАЦИЯ И ЗАПУСК ---
 function startGame() {
-    isDialogueActive = false;
-    grandfatherDialogue.classList.add('hidden');
     
     let lastTime = 0;
     function gameLoop(currentTime) { 
-        if (isPaused || isDialogueActive) { lastTime = currentTime; requestAnimationFrame(gameLoop); return; }
+        if (isPaused) { lastTime = currentTime; requestAnimationFrame(gameLoop); return; }
         if (lastTime === 0) lastTime = currentTime; 
         const deltaTime = (currentTime - lastTime) / 1000; 
         lastTime = currentTime; 
@@ -675,8 +845,7 @@ function enemySpawner() {
         const minDelay = baseMinDelay / difficultyModifier;
         const maxDelay = baseMaxDelay / difficultyModifier;
 
-        const isBearSeason = [5, 6, 7].includes(stage.frameIndex);
-        if (isBearSeason && bears.length === 0 && Math.random() < 0.25) { 
+        if (stage.isNight && bears.length === 0 && Math.random() < 0.25) { 
              bears.push(new Bear());
         } else {
             const rand = Math.random();
@@ -714,6 +883,7 @@ function initializeGame() {
     updateResourceCounters();
     updateInventoryButtons();
     settingsButton.style.backgroundImage = `url('${SETTINGS_ICON_SRC}')`;
+    statsButton.style.backgroundImage = `url('${CALCULATOR_ICON_SRC}')`;
     grassButton.style.backgroundImage = `url('${GRASS_ICON_SRC}')`;
     hayButton.style.backgroundImage = `url('${HAY_SPRITES[0]}')`;
     troughButton.style.backgroundImage = `url('${TROUGH_ICON_SRC}')`;
@@ -722,7 +892,6 @@ function initializeGame() {
     piggyFoodButton.style.backgroundImage = `url('${PIGGY_FOOD_ICON_SRC}')`;
     repairButton.style.backgroundImage = `url('${REPAIR_ICON_SRC}')`;
     menuToggleButton.style.backgroundImage = `url('${INVENTORY_ICON_SRC}')`;
-    resourcesToggleButton.style.backgroundImage = `url('${CALCULATOR_ICON_SRC}')`;
     document.body.style.cursor = 'default';
 
     for (let i = 0; i < NUM_CLOUDS; i++) { clouds.push(new Cloud()); }
@@ -730,11 +899,9 @@ function initializeGame() {
     
     translateUI();
     
-    isDialogueActive = true;
-    grandfatherDialogue.classList.remove('hidden');
-    typewriterEffect(dialogueText, translations[currentLanguage].grandfather_dialogue, () => {
-        dialogueContinueButton.classList.remove('hidden');
-    });
+    dialogueContinueButton.addEventListener('click', showNextTutorialStep);
+    skipTutorialButton.addEventListener('click', endTutorial);
+    startTutorial();
     
     grassButton.addEventListener('click', () => setActiveTool('grass'));
     hayButton.addEventListener('click', () => setActiveTool('hay'));
@@ -772,8 +939,13 @@ function initializeGame() {
     });
 
     restartButton.addEventListener('click', () => { playSound(clickSound); location.reload(); });
-    menuToggleButton.addEventListener('click', () => { playSound(clickSound); mainActionsContainer.classList.toggle('open'); });
-    resourcesToggleButton.addEventListener('click', () => { playSound(clickSound); document.getElementById('resources-panel-container').classList.toggle('open'); });
+    menuToggleButton.addEventListener('click', () => { 
+        playSound(clickSound); 
+        mainActionsContainer.classList.toggle('open');
+        if (menuToggleButton.classList.contains('highlight-ui')) {
+            menuToggleButton.classList.remove('highlight-ui');
+        }
+    });
     
     settingsButton.addEventListener('click', () => { 
         playSound(clickSound);
@@ -782,12 +954,28 @@ function initializeGame() {
         settingsMenu.classList.remove('hidden'); 
     });
     closeSettingsButton.addEventListener('click', () => { playSound(clickSound); isPaused = false; settingsMenu.classList.add('hidden'); });
+    
+    statsButton.addEventListener('click', () => {
+        playSound(clickSound);
+        if(isDialogueActive) return;
+        isPaused = true;
+        updateStatsUI();
+        statsMenu.classList.remove('hidden');
+    });
+    closeStatsButton.addEventListener('click', () => {
+        playSound(clickSound);
+        isPaused = false;
+        statsMenu.classList.add('hidden');
+    });
+
     soundToggleButton.addEventListener('click', () => { playSound(clickSound); isSoundMuted = !isSoundMuted; translateUI(); });
     musicToggleButton.addEventListener('click', () => { playSound(clickSound); isMusicMuted = !isMusicMuted; updateMusicState(CYCLE_STAGES[currentStageIndex > 0 ? currentStageIndex-1:0]?.isNight || false); translateUI(); });
     languageToggleButton.addEventListener('click', () => { playSound(clickSound); currentLanguage = currentLanguage === 'rus' ? 'eng' : 'rus'; translateUI(); });
     godButton.addEventListener('click', () => { playSound(clickSound); goldCount += 1000000; updateResourceCounters(); });
 
-    dialogueContinueButton.addEventListener('click', startGame, { once: true });
+    musicTracks.forEach(track => {
+        track.addEventListener('ended', playNextTrack);
+    });
     
     window.addEventListener('resize', () => { 
         uiTargetCoordsCache = {};

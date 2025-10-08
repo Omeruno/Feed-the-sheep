@@ -286,6 +286,7 @@ class Chicken {
         
         this.targetX = this.x; this.targetY = this.y;
         this.isWaiting = true; this.isEating = false; this.isScared = false; this.isHiding = false;
+        this.isPinnedForTutorial = false;
         
         this.waitTimer = setTimeout(() => this.decideNextAction(), Math.random() * MAX_WAIT_TIME);
     }
@@ -324,6 +325,8 @@ class Chicken {
     }
 
     update(deltaTime) {
+        if (this.isPinnedForTutorial) return;
+
          if (currentHouse) {
             this.element.style.zIndex = this.y > currentHouse.layerThreshold ? '6' : '4';
         }
