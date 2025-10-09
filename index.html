@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Пастух</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -15,21 +15,21 @@
             <div id="progress-bar"></div>
         </div>
     </div>
+    
+    <!-- ДИАЛОГОВОЕ ОКНО ОБУЧЕНИЯ -->
+    <div id="tutorial-dialogue" class="hidden">
+        <div class="dialogue-box">
+             <button id="skip-tutorial-button" data-translate-key="skip_tutorial">Пропустить</button>
+            <img id="tutorial-character-image" src="images/girl/teaching.png" alt="Лоана" class="character-image">
+            <div class="text-content">
+                <p id="dialogue-text"></p>
+                <button id="dialogue-continue" class="hidden" data-translate-key="dialogue_continue">Продолжить</button>
+            </div>
+        </div>
+    </div>
 
 
     <div id="game-container" style="display: none;">
-        <!-- ДИАЛОГОВОЕ ОКНО ОБУЧЕНИЯ -->
-        <div id="tutorial-dialogue" class="hidden">
-            <div class="dialogue-box">
-                 <button id="skip-tutorial-button" data-translate-key="skip_tutorial">Пропустить</button>
-                <img src="images/girl/teaching.png" alt="Лоана" id="tutorial-character-image" class="character-image">
-                <div class="text-content">
-                    <p id="dialogue-text"></p>
-                    <button id="dialogue-continue" class="hidden" data-translate-key="dialogue_continue">Продолжить</button>
-                </div>
-            </div>
-        </div>
-
         <div id="game-world">
             <div id="bg-1" class="background-layer"></div>
             <div id="bg-2" class="background-layer"></div>
@@ -45,7 +45,7 @@
             <div id="player-message"></div>
 
             <div id="top-left-ui">
-                 <button id="stats-button" class="ui-element tool-button"></button>
+                <button id="stats-button" class="ui-element tool-button"></button>
             </div>
 
             <div id="top-right-ui">
@@ -73,7 +73,6 @@
 
         <!-- ОКНО МАГАЗИНА -->
         <div id="shop-menu" class="hidden">
-            <img src="images/shop/shop_menu.png" class="shop-background" alt="Меню магазина">
             <div class="shop-content">
                 <button id="close-shop-button">X</button>
                 
@@ -282,7 +281,7 @@
                                 <span class="cost-resource"><img src="images/gold/gold.png" alt="gold"> 400</span>
                             </div>
                         </button>
-                       </div>
+                   </div>
                 </div>
 
                 <div class="sell-buttons-container">
@@ -324,7 +323,7 @@
             <div class="stats-content">
                 <h2 data-translate-key="stats_title">Статистика</h2>
                 <div id="stats-grid">
-                    <!-- Resources will be populated here by JS -->
+                    <!-- Сюда будет генерироваться статистика -->
                 </div>
                 <button id="close-stats-button" data-translate-key="settings_close">Закрыть</button>
             </div>
@@ -341,8 +340,8 @@
     </div>
 
     <!-- Аудиофайлы -->
-    <audio id="background-melody" src="sound/fon.mp3"></audio>
-    <audio id="background-melody-2" src="sound/fon1.mp3"></audio>
+    <audio id="background-melody" src="sound/fon.mp3" loop></audio>
+    <audio id="background-melody-2" src="sound/fon1.mp3" loop></audio>
     <audio id="education-melody" src="sound/education.mp3" loop></audio>
     <audio id="day-sound" src="sound/day_sound.mp3" loop></audio>
     <audio id="night-song" src="sound/night_song.mp3" loop></audio>

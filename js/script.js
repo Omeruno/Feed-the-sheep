@@ -1018,8 +1018,15 @@ function preloadAssets() {
     });
 }
 
+function setVh() {
+    document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+}
 
 window.addEventListener('load', () => {
+    setVh();
+    window.addEventListener('resize', setVh);
+    window.addEventListener('orientationchange', setVh);
+
     let lastTouchEnd = 0;
     document.addEventListener('touchend', function(event) {
         let now = new Date().getTime();
