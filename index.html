@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Пастух</title>
+    <script>
+      (function() {
+        function setVh() {
+          document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
+        }
+        setVh();
+        window.addEventListener('resize', setVh);
+        window.addEventListener('orientationchange', setVh);
+        setTimeout(setVh, 500); // Иногда Telegram пересчитывает после загрузки
+      })();
+    </script>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -73,6 +84,7 @@
 
         <!-- ОКНО МАГАЗИНА -->
         <div id="shop-menu" class="hidden">
+            <img src="images/shop/shop_menu.png" class="shop-background" alt="Меню магазина">
             <div class="shop-content">
                 <button id="close-shop-button">X</button>
                 
