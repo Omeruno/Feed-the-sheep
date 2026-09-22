@@ -24,6 +24,7 @@ npm install
 npm run dev       # dev server with hot reload
 npm run build     # typecheck + production build to dist/
 npm run typecheck # tsc --noEmit only
+npm run balance   # headless run for tuning — see "Balance tuning" below
 ```
 
 ## Architecture
@@ -50,6 +51,8 @@ src/
   ui/
     hud.ts       population counts, sim time, max generation reached, sparkline
   main.ts        wiring: DOM, fixed-timestep loop, play/pause/speed/reset/seed
+scripts/
+  balance-check.ts   headless World runner for tuning (see below)
 ```
 
 Each system is a plain function operating on the shared `entities` array —
@@ -59,6 +62,35 @@ sexual reproduction) are additive rather than invasive.
 The simulation loop uses a fixed timestep (1/30s) with an accumulator, so
 behavior is stable regardless of the display's frame rate, and a speed
 slider just feeds more/less accumulated time per rendered frame.
+
+## Balance tuning
+
+`World.tick()` has no DOM dependency, so it can run headless: no canvas, no
+`requestAnimationFrame`, no real-time waiting. `npm run balance [seconds]
+[sampleEverySeconds] [seed]` bundles the World with esbuild and ticks it in
+a tight loop, printing population snapshots — minutes of sim-time cost
+well under a minute of real time (and there's no rendering cost either, so
+it also scales to far larger populations than the live page would want to
+draw). Use it after changing any rate or threshold in `systems/` to check
+the population dynamics before touching the browser at all:
+
+```bash
+npm run balance -- 600 30 1   # 600 sim-seconds, sampled every 30s, seed 1
+```
+
+The first version of the predator/prey balance looked fine over a minute
+but, run out to a few hundred sim-seconds, always ended the same way:
+predators overshot, hunted herbivores to extinction, and — since
+herbivores don't spawn spontaneously the way plants do — that extinction
+was permanent, so predators then starved too and the world went
+permanently static. Two changes fixed it: a post-meal satiation cooldown
+(`systems/feeding.ts`, a Holling type-II functional response) so a
+predator can't chain-eat and chain-reproduce in a dense patch, and a
+predator carrying capacity tied to the *current* herbivore count
+(`systems/reproduction.ts`) so predator numbers stay bounded by the prey
+available to support them. With both in place the three populations settle
+into a stable oscillation and hold it — verified out to 600+ sim-seconds
+across several seeds via `npm run balance`.
 
 ## Roadmap
 
