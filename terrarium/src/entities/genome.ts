@@ -46,3 +46,31 @@ export function mutateGenome(kind: Exclude<Kind, 'plant'>, parent: Genome, rng: 
     fertility: jitter(parent.fertility, r.fertility),
   };
 }
+
+// The hue band a species occupies stays visually distinct (herbivores read
+// as blue/cyan/violet, predators as red/orange/pink), but genome traits —
+// mostly speed and sense radius, the ones that most shape behavior — pick
+// the exact shade within that band. Similar genomes land close in hue, so
+// lineages read as visible color clusters that drift and split as they
+// evolve, instead of every individual within a species looking identical.
+const HUE_BANDS: Record<Exclude<Kind, 'plant'>, [number, number]> = {
+  herbivore: [175, 255],
+  predator: [345, 400],
+};
+
+export function genomeHue(kind: Exclude<Kind, 'plant'>, genome: Genome): number {
+  const r = RANGES[kind];
+  const norm = (value: number, [min, max]: [number, number]): number =>
+    Math.min(1, Math.max(0, (value - min) / (max - min)));
+
+  const score =
+    norm(genome.speed, r.speed) * 0.45 +
+    norm(genome.senseRadius, r.senseRadius) * 0.3 +
+    norm(genome.size, r.size) * 0.15 +
+    norm(genome.metabolism, r.metabolism) * 0.06 +
+    norm(genome.fertility, r.fertility) * 0.04;
+
+  const [from, to] = HUE_BANDS[kind];
+  const hue = from + score * (to - from);
+  return hue % 360;
+}
